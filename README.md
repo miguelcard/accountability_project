@@ -1,9 +1,11 @@
-#accountability_project
+# accountability_project
 
 
-##activate environtment
-###python3 env/bin/activate
+#install environment
+## python3 -m venv env || or windows python -m venv
 
-##install packages
+## activate environment
+### python3 env/bin/activate || deactivate for exit environment
 
-### pip install -r requirements.txt
+## install packages
+### pip3 install -r requirements.txt || or windows pip install -r
