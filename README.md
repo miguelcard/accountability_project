@@ -1,7 +1,7 @@
 # accountability_project
 
 
-#install environment
+# install environment
 ## python3 -m venv env || or windows python -m venv
 
 ## activate environment
