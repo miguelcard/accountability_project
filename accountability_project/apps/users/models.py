@@ -1,4 +1,5 @@
 from django.db import models
+from apps.scoreboards.models import ScoreBoard
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from simple_history.models import HistoricalRecords
 
@@ -32,6 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField('your name', max_length=70, blank=True, null=True)
     last_name = models.CharField('last name', max_length=90, blank=True, null=True)
     email = models.EmailField('your email', max_length=255, unique=True)
+    score_board = models.ForeignKey(ScoreBoard, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
