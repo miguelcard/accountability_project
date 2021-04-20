@@ -20,4 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/', include('apps.users.api.urls')),
     path('groups/', include('apps.groups.api.urls')),
+    path('scoreboards/', include('apps.scoreboards.api.urls')),
 ]
