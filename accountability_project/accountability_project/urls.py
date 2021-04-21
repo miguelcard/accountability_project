@@ -21,4 +21,5 @@ urlpatterns = [
     path('users/', include('apps.users.api.urls')),
     path('groups/', include('apps.groups.api.urls')),
     path('scoreboards/', include('apps.scoreboards.api.urls')),
+    path('habits/', include('apps.habits.api.urls')),
 ]
