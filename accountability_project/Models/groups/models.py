@@ -1,5 +1,5 @@
 from django.db import models
-from apps.users.models import User
+from Models.users.models import User
 from simple_history.models import HistoricalRecords
 
 

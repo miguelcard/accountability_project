@@ -1,8 +1,8 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from apps.habits.models import Habit
-from apps.habits.api.serializers import HabitSerializer
+from Models.habits.models import Habit
+from Models.habits.api.serializers import HabitSerializer
 
 
 @api_view(['GET', 'POST'])

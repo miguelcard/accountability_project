@@ -1,5 +1,5 @@
 from django.db import models
-from apps.habits.models import Habit
+from Models.habits.models import Habit
 
 
 class ScoreBoard(models.Model):

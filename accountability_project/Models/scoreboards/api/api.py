@@ -2,8 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
-from apps.scoreboards.models import ScoreBoard
-from apps.scoreboards.api.serializers import ScoreBoardSerializer
+from Models.scoreboards.models import ScoreBoard
+from Models.scoreboards.api.serializers import ScoreBoardSerializer
 
 
 @api_view(['GET', 'POST'])

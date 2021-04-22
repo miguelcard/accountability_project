@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.scoreboards.models import ScoreBoard
+from Models.scoreboards.models import ScoreBoard
 
 
 class ScoreBoardSerializer(serializers.ModelSerializer):

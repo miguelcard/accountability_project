@@ -1,5 +1,5 @@
 from django.urls import path
-from apps.habits.api.api import Habit_api_view, habit_datail_api_view
+from Models.habits.api.api import Habit_api_view, habit_datail_api_view
 
 
 urlpatterns = [

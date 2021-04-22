@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.groups.models import Group
+from Models.groups.models import Group
 
 
 class GroupSerializer(serializers.ModelSerializer):
