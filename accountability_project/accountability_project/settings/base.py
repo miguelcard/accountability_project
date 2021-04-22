@@ -42,10 +42,10 @@ BASE_APPS = [
 ]
 
 LOCAL_APPS = [
-    'apps.users',
-    'apps.groups',
-    'apps.scoreboards',
-    'apps.habits',
+    'Models.users',
+    'Models.groups',
+    'Models.scoreboards',
+    'Models.habits',
 ]
 
 THIRD_APPS = [

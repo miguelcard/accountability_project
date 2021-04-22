@@ -1,5 +1,9 @@
 from django.db import models
+<<<<<<< HEAD:accountability_project/apps/users/models.py
 from apps.scoreboards.models import ScoreBoard
+=======
+from Models.scoreboards.models import ScoreBoard
+>>>>>>> 4068767780463d5ee31c1e03dcbab06d18d46381:accountability_project/Models/users/models.py
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from simple_history.models import HistoricalRecords
 

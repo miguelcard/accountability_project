@@ -1,8 +1,8 @@
 from django.contrib import admin
-from apps.users.models import User
-from apps.groups.models import Group
-from apps.scoreboards.models import ScoreBoard
-from apps.habits.models import Habit, StartDay, FinishDay
+from Models.users.models import User
+from Models.groups.models import Group
+from Models.scoreboards.models import ScoreBoard
+from Models.habits.models import Habit, StartDay, FinishDay
 
 admin.site.register(User)
 admin.site.register(Group)
