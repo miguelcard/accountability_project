@@ -10,3 +10,5 @@
 ## install packages
 ### pip3 install -r requirements.txt || or windows pip install -r
 
+##Migue: Update... Los contenedored de DOcker se haran cargo de esto...
+
