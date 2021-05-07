@@ -17,3 +17,17 @@ class UserSerializer(serializers.ModelSerializer):
         update_user.set_password(validated_data['password'])
         update_user.save()
         return update_user
+
+
+class UserTokenserializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'username',
+            'name',
+            'last_name',
+            'email',
+            'password',
+            'score_board'
+        )
