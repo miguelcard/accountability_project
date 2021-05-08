@@ -53,7 +53,6 @@ class Logout(APIView):
     def post(self, request, *args, **kwargs):
         try:
             token_id = request.POST.get('token')
-            print(token_id)
             token = Token.objects.filter(key=token_id).first()
 
             if token:
