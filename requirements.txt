@@ -6,8 +6,7 @@ django-cors-headers==3.7.0
 django-simple-history==2.12.0
 djangorestframework==3.12.4
 pathlib==1.0.1
-pkg-resources==0.0.0
-psycopg2==2.8.6
+psycopg2-binary==2.8.6
 pycodestyle==2.7.0
 pycparser==2.20
 python-decouple==3.4
