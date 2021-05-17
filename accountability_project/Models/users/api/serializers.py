@@ -1,10 +1,23 @@
 from rest_framework import serializers
 from Models.users.models import User
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = (
+            "id",
+            "username",
+            "name",
+            "last_name",
+            "email",
+            "password",
+            "score_board",
+            "created_at",
+            "updated_at",
+            "is_active",
+            "is_superuser"
+        )
 
     def create(self, validated_data):
         user = User(**validated_data)
