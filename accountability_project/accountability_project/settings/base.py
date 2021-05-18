@@ -51,6 +51,7 @@ LOCAL_APPS = [
 THIRD_APPS = [
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     'simple_history',
 ]
 

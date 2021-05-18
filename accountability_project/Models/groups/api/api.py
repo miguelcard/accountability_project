@@ -35,7 +35,7 @@ def group_datail_api_view(request, pk=None):
             if group_serializer.is_valid():
                 group_serializer.save()
                 return Response(group_serializer.data, status= status.HTTP_200_OK)
-            return Response(group_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Fields not Allowed'}, status= status.HTTP_400_BAD_REQUEST)
 
         elif request.method == 'DELETE':
             group.delete()
