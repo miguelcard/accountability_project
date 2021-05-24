@@ -15,7 +15,7 @@ services:
         image: postgres 
         container_name: db
         environment: 
-            - POSTGRES_DB=postgres
+            - POSTGRES_DB=accountability
             - POSTGRES_USER=postgres
             - POSTGRES_PASSWORD=postgres
         volumes: 

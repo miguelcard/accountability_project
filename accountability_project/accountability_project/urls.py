@@ -23,8 +23,6 @@ urlpatterns = [
     path('groups/', include('Models.groups.api.urls')),
     path('scoreboards/', include('Models.scoreboards.api.urls')),
     path('habits/', include('Models.habits.api.urls')),
-    path('startdays/', include('Models.habits.api.urls')),
-    path('finishdays/', include('Models.habits.api.urls')),
     path('login/', Login.as_view(), name = 'login'),
     path('logout/', Logout.as_view(), name = 'logout')
 ]
