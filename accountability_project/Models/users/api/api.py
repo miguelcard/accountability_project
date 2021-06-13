@@ -28,7 +28,7 @@ def user_api_view(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-def user_datail_api_view(request, pk=None):
+def user_detail_api_view(request, pk=None):
     user = User.objects.filter(id=pk).first()
 
     if user:

@@ -18,8 +18,14 @@ services:
             - POSTGRES_DB=accountability
             - POSTGRES_USER=postgres
             - POSTGRES_PASSWORD=postgres
+            - APP_DB_USER=develop
+            - APP_DB_PASS=develop
+            - APP_DB_NAME=accountability
         volumes: 
+            # persist the data locally
             - pg-data:/var/lib/postgresql/data/
+            # copy the initialization scripts inside the container, to create table
+            - ./db:/docker-entrypoint-initdb.d/
         ports:
             - "5432:5432"
     pgadmin:  

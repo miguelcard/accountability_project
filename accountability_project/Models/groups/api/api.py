@@ -22,7 +22,7 @@ def group_api_view(request):
         return Response(groups_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
-def group_datail_api_view(request, pk=None):
+def group_detail_api_view(request, pk=None):
     group = Group.objects.filter(id = pk).first()
 
     if group:

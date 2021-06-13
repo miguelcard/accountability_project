@@ -23,7 +23,7 @@ def Habit_api_view(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-def habit_datail_api_view(request, pk=None):
+def habit_detail_api_view(request, pk=None):
     habit = Habit.objects.filter(id = pk).first()
 
     if habit:

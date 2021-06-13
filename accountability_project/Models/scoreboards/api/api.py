@@ -22,7 +22,7 @@ def score_board_api_view(request):
         return Response(score_board_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
-def score_board_datail_api_view(request, pk=None):
+def score_board_detail_api_view(request, pk=None):
     score_board = ScoreBoard.objects.filter(id = pk).first()
 
     if score_board:
