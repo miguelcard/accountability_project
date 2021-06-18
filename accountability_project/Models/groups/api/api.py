@@ -5,6 +5,21 @@ from rest_framework.decorators import api_view
 from Models.groups.models import Group
 from Models.groups.api.serializers import GroupSerializer
 
+class GroupApiView(APIView):
+
+    def get(self, request):
+        groups = Group.objects.all()
+        groups_serializer = GroupSerializer(groups, many=True)
+        return Response(groups_serializer.data, status= status.HTTP_200_OK)
+
+    def post(self, request):
+        groups_serializer = GroupSerializer(data = request.data)
+        if groups_serializer.is_valid():
+            groups_serializer.save()
+            return Response(groups_serializer.data, status= status.HTTP_201_CREATED)
+        return Response(groups_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
+
+        
 
 @api_view(['GET', 'POST'])
 def group_api_view(request):
@@ -18,7 +33,7 @@ def group_api_view(request):
         groups_serializer = GroupSerializer(data = request.data)
         if groups_serializer.is_valid():
             groups_serializer.save()
-            return Response(groups_serializer.data, status= status.HTTP_200_OK)
+            return Response(groups_serializer.data, status= status.HTTP_201_CREATED)
         return Response(groups_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
