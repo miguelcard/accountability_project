@@ -18,10 +18,8 @@ class Group(models.Model):
 
     class Meta:
         """Meta definition for MODELNAME."""
-
         verbose_name = 'Group'
         verbose_name_plural = 'Groups'
-
 
     USERNAME_FIELD = 'group_name'
     REQUIRED_FIELDS = ['group_name', 'theme']

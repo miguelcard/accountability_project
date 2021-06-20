@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+#from rest_framework.decorators import api_view
 from Models.groups.models import Group
 from Models.groups.api.serializers import GroupSerializer
 
@@ -19,8 +19,36 @@ class GroupApiView(APIView):
             return Response(groups_serializer.data, status= status.HTTP_201_CREATED)
         return Response(groups_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
 
-        
+class GroupDetailApiView(APIView):
 
+    # method to just get  group object and check if its valid
+    def get_object(self, pk):
+        try:
+            return Group.objects.get(id = pk)
+        except Group.DoesNotExist:
+            return Response({'Message':'group not found'}, status= status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk):
+        group = self.get_object(pk)
+        group_serializer = GroupSerializer(group)
+        return Response(group_serializer.data, status= status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        group = self.get_object(pk)
+        group_serializer = GroupSerializer(group, data = request.data)
+        if group_serializer.is_valid():
+            group_serializer.save()
+            return Response(group_serializer.data, status= status.HTTP_200_OK)
+        return Response({'message': 'Object fields not allowed'}, status= status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        group = self.get_object(pk)
+        group.delete()
+        return Response({'Message':'group has been deleted'}, status= status.HTTP_204_NO_CONTENT)
+
+
+
+"""
 @api_view(['GET', 'POST'])
 def group_api_view(request):
 
@@ -36,8 +64,10 @@ def group_api_view(request):
             return Response(groups_serializer.data, status= status.HTTP_201_CREATED)
         return Response(groups_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
 
+
+
 @api_view(['GET', 'PUT', 'DELETE'])
-def group_detail_api_view(request, pk=None):
+def group_detail_api_view(request, pk=None): #pk=None ?
     group = Group.objects.filter(id = pk).first()
 
     if group:
@@ -54,6 +84,7 @@ def group_detail_api_view(request, pk=None):
 
         elif request.method == 'DELETE':
             group.delete()
-            return Response({'Message':'group has been delete'}, status= status.HTTP_200_OK)
+            return Response({'Message':'group has been deleted'}, status= status.HTTP_200_OK)
 
-    return Response({'Message':'group not found'}, status= status.HTTP_400_BAD_REQUEST)
+    return Response({'Message':'group not found'}, status= status.HTTP_404_NOT_FOUND)
+"""
