@@ -21,11 +21,7 @@ class Group(models.Model):
         verbose_name = 'Group'
         verbose_name_plural = 'Groups'
 
-    USERNAME_FIELD = 'group_name'
     REQUIRED_FIELDS = ['group_name', 'theme']
-
-    def natural_key(self):
-        return (self.group_name)
 
     def __str__(self):
         """Unicode representation of MODELNAME."""
