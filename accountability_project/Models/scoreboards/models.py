@@ -2,7 +2,7 @@ from django.db import models
 from Models.habits.models import Habit
 
 
-class ScoreBoard(models.Model):
+class Scoreboard(models.Model):
     """Model definition for MODELNAME."""
 
     notes = models.TextField(max_length=255, blank=True, null=True)
@@ -13,8 +13,8 @@ class ScoreBoard(models.Model):
     class Meta:
         """Meta definition for MODELNAME."""
 
-        verbose_name = 'ScoreBoard'
-        verbose_name_plural = 'ScoreBoards'
+        verbose_name = 'Scoreboard'
+        verbose_name_plural = 'Scoreboards'
 
     def __str__(self):
         """Unicode representation of MODELNAME."""

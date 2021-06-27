@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from Models.scoreboards.models import ScoreBoard
+from Models.scoreboards.models import Scoreboard
 
 
-class ScoreBoardSerializer(serializers.ModelSerializer):
+class ScoreboardSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ScoreBoard
+        model = Scoreboard
         fields = '__all__'

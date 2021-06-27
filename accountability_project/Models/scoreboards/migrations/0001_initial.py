@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ScoreBoard',
+            name='Scoreboard',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('notes', models.TextField(blank=True, max_length=255, null=True)),
@@ -22,8 +22,8 @@ class Migration(migrations.Migration):
                 ('habit', models.ManyToManyField(to='habits.Habit')),
             ],
             options={
-                'verbose_name': 'ScoreBoard',
-                'verbose_name_plural': 'ScoreBoards',
+                'verbose_name': 'Scoreboard',
+                'verbose_name_plural': 'Scoreboards',
             },
         ),
     ]
