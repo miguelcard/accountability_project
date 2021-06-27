@@ -5,12 +5,12 @@ from rest_framework import generics, mixins
 """ ---------views for groups--------"""
 
 class GroupGenericApiView(generics.GenericAPIView,
-                            mixins.ListModelMixin,
-                            mixins.RetrieveModelMixin,
-                            mixins.CreateModelMixin, 
-                            mixins.UpdateModelMixin,
-                            mixins.DestroyModelMixin
-                            ):
+                        mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.CreateModelMixin, 
+                        mixins.UpdateModelMixin,
+                        mixins.DestroyModelMixin
+                        ):
     
     queryset = Group.objects.all()
     serializer_class = GroupSerializer

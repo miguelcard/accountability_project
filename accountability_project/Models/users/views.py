@@ -45,7 +45,6 @@ class Login(ObtainAuthToken):
         else:
             return Response({'message': 'invalid email or password'},
                             status=status.HTTP_400_BAD_REQUEST)
-        return Response({'message': 'hello'}, status=status.HTTP_200_OK)
 
 
 class Logout(APIView):
