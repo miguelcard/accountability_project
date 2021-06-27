@@ -1,5 +1,5 @@
 from django.urls import path
-from Models.groups.api.api import GroupApiView, GroupDetailApiView, GroupGenericApiView
+from Models.groups.api.api import GroupGenericApiView
 
 urlpatterns = [
     path('group/',GroupGenericApiView.as_view()),

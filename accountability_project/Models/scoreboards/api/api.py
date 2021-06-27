@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view
 from Models.scoreboards.models import ScoreBoard
 from Models.scoreboards.api.serializers import ScoreBoardSerializer
 
+""" ---------views for scoreboards--------"""
 
 @api_view(['GET', 'POST'])
 def score_board_api_view(request):

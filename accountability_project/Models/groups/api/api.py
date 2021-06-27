@@ -1,9 +1,8 @@
-from rest_framework import request, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from Models.groups.models import Group
 from Models.groups.api.serializers import GroupSerializer
 from rest_framework import generics, mixins
+
+""" ---------views for groups--------"""
 
 class GroupGenericApiView(generics.GenericAPIView,
                             mixins.ListModelMixin,
@@ -25,10 +24,10 @@ class GroupGenericApiView(generics.GenericAPIView,
     def post(self, request):
         return self.create(request)
 
-    def put(self, pk):
+    def put(self, request, pk=None):
         return self.update(request, pk)
 
-    def delete(self, pk):
+    def delete(self, request, pk=None):
         return self.destroy(request, pk)
 
 
