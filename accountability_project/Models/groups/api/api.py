@@ -1,3 +1,4 @@
+from Models.users.models import User
 from Models.groups.models import Group
 from Models.groups.api.serializers import GroupSerializer
 from rest_framework import generics, mixins

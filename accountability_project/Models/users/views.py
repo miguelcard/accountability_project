@@ -9,7 +9,7 @@ from django.contrib.sessions.models import Session
 
 
 class Login(ObtainAuthToken):
-    """class that create a token id for the login view rout"""
+    """class that creates a token id for the login view rout"""
 
     def post(self, request, *args, **kwargs):
         """how we received two data that is:
