@@ -1,13 +1,28 @@
+from accountability_project.Models.users.api.serializers import UserSerializer
 from datetime import datetime
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from Models.users.api.serializers import UserTokenserializer
+from Models.users.api.serializers import UserTokenserializer, RegisterSerializer, UserSerializer
 from django.contrib.sessions.models import Session
+from rest_framework import generics
 
+# Register API
+class RegisterAPI(generics.GenericAPIView):
+    serializer_class = RegisterSerializer
 
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+        "user": UserSerializer(user, context=self.get_serializer_context()).data,
+        #"token": AuthToken.objects.create(user)[1]
+        })
+
+# Login API
 class Login(ObtainAuthToken):
     """class that creates a token id for the login view rout"""
 
@@ -15,7 +30,7 @@ class Login(ObtainAuthToken):
         """how we received two data that is:
            username and password we need a serialize this data
            we will find this serializer inside of ObtainAuthToken
-           that its call serializer_class that contain two things
+           that calls its serializer_class that contains two things
            first the username variable and second the password variable
         """
         login_serializer = self.serializer_class(
@@ -46,7 +61,7 @@ class Login(ObtainAuthToken):
             return Response({'message': 'invalid email or password'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-
+# Logout API
 class Logout(APIView):
 
     def post(self, request, *args, **kwargs):

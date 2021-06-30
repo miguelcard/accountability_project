@@ -53,6 +53,7 @@ THIRD_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'simple_history',
+    'knox',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -142,3 +143,12 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Default authentication for all views 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
+        'knox.auth.TokenAuthentication',
+    ]
+}
