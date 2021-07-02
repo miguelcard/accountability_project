@@ -8,8 +8,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'password2')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = (
+            'id', 'username', 'email', 'password', 'password2'
+        )
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
     def create(self, validated_data):
         user = User(email=self.validated_data['email'], username=self.validated_data['username'])
@@ -32,13 +36,16 @@ class UserSerializer(serializers.ModelSerializer):
             "name",
             "last_name",
             "email",
-            "password",
+            "password", 
             "score_board",
-            "created_at",
-            "updated_at",
-            "is_active",
-            "is_superuser"
+            "created_at", # Needed on fornt end?
+            "updated_at", # Needed on front end?
+            "is_active", 
+            "is_superuser" 
         )
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
     def create(self, validated_data):
         user = User(**validated_data)

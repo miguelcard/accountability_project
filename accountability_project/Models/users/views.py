@@ -1,4 +1,4 @@
-from accountability_project.Models.users.api.serializers import UserSerializer
+from Models.users.api.serializers import UserSerializer
 from datetime import datetime
 from rest_framework import status
 from rest_framework.response import Response
@@ -8,6 +8,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from Models.users.api.serializers import UserTokenserializer, RegisterSerializer, UserSerializer
 from django.contrib.sessions.models import Session
 from rest_framework import generics
+from knox.models import AuthToken
 
 # Register API
 class RegisterAPI(generics.GenericAPIView):
@@ -19,7 +20,7 @@ class RegisterAPI(generics.GenericAPIView):
         user = serializer.save()
         return Response({
         "user": UserSerializer(user, context=self.get_serializer_context()).data,
-        #"token": AuthToken.objects.create(user)[1]
+        "token": AuthToken.objects.create(user)[1]
         })
 
 # Login API
