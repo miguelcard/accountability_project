@@ -72,3 +72,6 @@ class UserTokenserializer(serializers.ModelSerializer):
             'password',
             'score_board'
         )
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
