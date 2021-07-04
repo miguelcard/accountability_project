@@ -3,7 +3,7 @@ from Models.users.models import User
 
 # Register Serializer
 class RegisterSerializer(serializers.ModelSerializer):
-    #This password2 doesnt exist in the model itself but ut has ti be passed at registration, thats why we create it manually
+    #This password2 doesnt exist in the model itself but it has to be passed at registration, thats why we create it manually
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
 
     class Meta:

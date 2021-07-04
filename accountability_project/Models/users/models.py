@@ -16,7 +16,7 @@ class UserManager(BaseUserManager):
             is_superuser = is_superuser,
             **extra_fields
         )
-        user.set_password(password) # WHY IS THIS HERE?? 
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
