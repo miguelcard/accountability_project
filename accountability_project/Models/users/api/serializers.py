@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "password", 
             "score_board",
-            "created_at", # Needed on fornt end?
+            "created_at", # Needed on front end?
             "updated_at", # Needed on front end?
             "is_active", 
             "is_superuser" 

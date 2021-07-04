@@ -16,14 +16,14 @@ class UserManager(BaseUserManager):
             is_superuser = is_superuser,
             **extra_fields
         )
-        user.set_password('password')
+        user.set_password(password) # WHY IS THIS HERE?? 
         user.save(using=self._db)
         return user
 
     def create_user(self, username, email, name, last_name, password=None, **extra_fields):
         return self._create_user(username, email, name, last_name, password, False, False, **extra_fields)
 
-    def create_superuser(self, username, email, name, last_name, password=None, **extra_fields):
+    def create_superuser(self, username, email, name=None, last_name=None, password=None, **extra_fields):
         return self._create_user(username, email, name, last_name, password, True, True, **extra_fields)
 
 
