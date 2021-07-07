@@ -1,5 +1,5 @@
 from django.db import models
-from Models.scoreboards.models import ScoreBoard
+from Models.scoreboards.models import Scoreboard
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from simple_history.models import HistoricalRecords
 
@@ -16,14 +16,14 @@ class UserManager(BaseUserManager):
             is_superuser = is_superuser,
             **extra_fields
         )
-        user.set_password('password')
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_user(self, username, email, name, last_name, password=None, **extra_fields):
         return self._create_user(username, email, name, last_name, password, False, False, **extra_fields)
 
-    def create_superuser(self, username, email, name, last_name, password=None, **extra_fields):
+    def create_superuser(self, username, email, name=None, last_name=None, password=None, **extra_fields):
         return self._create_user(username, email, name, last_name, password, True, True, **extra_fields)
 
 
@@ -33,7 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField('your name', max_length=70, blank=True, null=True)
     last_name = models.CharField('last name', max_length=90, blank=True, null=True)
     email = models.EmailField('your email', max_length=255, unique=True)
-    score_board = models.ForeignKey(ScoreBoard, on_delete=models.CASCADE, null=True)
+    score_board = models.ForeignKey(Scoreboard, on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -47,7 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = 'Users'
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email', 'name', 'last_name']
+    REQUIRED_FIELDS = ['email']
 
     def natural_key(self):
         return (self.username)

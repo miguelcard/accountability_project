@@ -1,44 +1,35 @@
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+from Models.users.models import User
 from Models.groups.models import Group
 from Models.groups.api.serializers import GroupSerializer
+from rest_framework import generics, mixins
+
+""" ---------views for groups--------"""
+
+class GroupGenericApiView(generics.GenericAPIView,
+                        mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.CreateModelMixin, 
+                        mixins.UpdateModelMixin,
+                        mixins.DestroyModelMixin
+                        ):
+    
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+
+    def get(self, request, pk=None):
+        if pk:
+            return self.retrieve(request, pk)
+        else:
+            return self.list(request)
+
+    def post(self, request):
+        return self.create(request)
+
+    def put(self, request, pk=None):
+        return self.update(request, pk)
+
+    def delete(self, request, pk=None):
+        return self.destroy(request, pk)
 
 
-@api_view(['GET', 'POST'])
-def group_api_view(request):
-
-    if request.method == 'GET':
-        groups = Group.objects.all()
-        groups_serializer = GroupSerializer(groups, many=True)
-        return Response(groups_serializer.data, status= status.HTTP_200_OK)
-
-    elif request.method == 'POST':
-        groups_serializer = GroupSerializer(data = request.data)
-        if groups_serializer.is_valid():
-            groups_serializer.save()
-            return Response(groups_serializer.data, status= status.HTTP_200_OK)
-        return Response(groups_serializer.errors, status= status.HTTP_400_BAD_REQUEST)
-
-@api_view(['GET', 'PUT', 'DELETE'])
-def group_datail_api_view(request, pk=None):
-    group = Group.objects.filter(id = pk).first()
-
-    if group:
-        if request.method == 'GET':
-            group_serializer = GroupSerializer(group)
-            return Response(group_serializer.data, status= status.HTTP_200_OK)
-
-        elif request.method == 'PUT':
-            group_serializer = GroupSerializer(group, data = request.data)
-            if group_serializer.is_valid():
-                group_serializer.save()
-                return Response(group_serializer.data, status= status.HTTP_200_OK)
-            return Response({'message': 'Fields not Allowed'}, status= status.HTTP_400_BAD_REQUEST)
-
-        elif request.method == 'DELETE':
-            group.delete()
-            return Response({'Message':'group has been delete'}, status= status.HTTP_200_OK)
-
-    return Response({'Message':'group not found'}, status= status.HTTP_400_BAD_REQUEST)
+# use perform methods to add custom logic, https://www.django-rest-framework.org/api-guide/generic-views/#mixins
