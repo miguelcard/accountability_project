@@ -144,6 +144,10 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 
 STATIC_URL = '/static/'
 
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'static/media/')
+
 # Default authentication for all views 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
