@@ -33,7 +33,7 @@ class GroupGenericApiView(generics.GenericAPIView,
 
 """----------post api-----------------"""
 
-class GroupGenericApiView(generics.GenericAPIView,
+class PostGenericApiView(generics.GenericAPIView,
                         mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,
                         mixins.CreateModelMixin, 
