@@ -22,7 +22,7 @@ class RegisterAPI(generics.GenericAPIView):
         })
 
 #Login API 
-class LoginAPI(KnoxLoginView):
+class LoginAPI(KnoxLoginView, generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, format=None):
@@ -30,5 +30,10 @@ class LoginAPI(KnoxLoginView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         login(request, user)
-        return super(LoginAPI, self).post(request, format=None)
+        return Response({
+            "user":UserSerializer(user, context=self.get_serializer_context()).data,
+            "authentication": super(LoginAPI, self).post(request, format=None).data
+        })
+
+        
 
