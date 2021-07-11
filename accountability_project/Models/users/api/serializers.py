@@ -38,11 +38,10 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "password", 
+            "profile_photo",
             "score_board",
-            "created_at", # Needed on front end?
-            "updated_at", # Needed on front end?
             "is_active", 
-            "is_superuser" 
+            "is_superuser"
         )
         extra_kwargs = {
             'password': {'write_only': True}
@@ -59,3 +58,9 @@ class UserSerializer(serializers.ModelSerializer):
         update_user.set_password(validated_data['password'])
         update_user.save()
         return update_user
+
+class UserUpdatedFieldsWithoutPasswordSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        exclude = ("password", "is_active", "is_staff", "is_superuser")
