@@ -20,10 +20,10 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('users/', include('Models.users.api.urls')),
-    path('groups/', include('Models.groups.api.urls')),
-    path('scoreboards/', include('Models.scoreboards.api.urls')),
-    path('habits/', include('Models.habits.api.urls'))
+    path('api/', include('Models.users.api.urls')),
+    path('api/', include('Models.groups.api.urls')),
+    path('api/', include('Models.scoreboards.api.urls')),
+    path('api/', include('Models.habits.api.urls'))
 ]
 
 if settings.DEBUG:
