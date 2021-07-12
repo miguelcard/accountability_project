@@ -17,3 +17,8 @@ toml==0.10.2
 typing-extensions==3.7.4.3
 django-rest-knox==4.01
 pillow==8.3.1
+
+# libraries for API documentation (just development)
+pyyaml==5.4.1
+uritemplate==3.0.1
+coreapi==2.3.3

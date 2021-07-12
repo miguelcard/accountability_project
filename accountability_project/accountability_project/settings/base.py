@@ -149,13 +149,16 @@ MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'static/media/')
 
-# Default authentication for all views 
+
 REST_FRAMEWORK = {
+    # Default authentication for all views 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # 'rest_framework.authentication.BasicAuthentication',
         # 'rest_framework.authentication.SessionAuthentication',
         'knox.auth.TokenAuthentication',
-    ]
+    ],
+    # Schema for API Documentation
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }
 
 # Knox Tokens Settings 
@@ -163,3 +166,4 @@ REST_KNOX = {
   'TOKEN_TTL': timedelta(hours=72),
   'AUTO_REFRESH': True,
 }
+
