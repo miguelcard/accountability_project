@@ -28,12 +28,20 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """create models fot the databases"""
+    """create models for the database"""
+
+    GENDER_CHOICES = [
+    ('Male', 'Male'),
+    ('Female', 'Female'),
+    ('Other', 'Other'),
+    ]
+
     username = models.CharField('username', max_length=120, unique=True)
     name = models.CharField('your name', max_length=70, blank=True, null=True)
     last_name = models.CharField('last name', max_length=90, blank=True, null=True)
     email = models.EmailField('your email', max_length=255, unique=True)
     profile_photo = models.ImageField(upload_to='images/profile/', blank=True, null=True)
+    gender = models.CharField(max_length=7, choices=GENDER_CHOICES, blank=True, null=True)
     score_board = models.ForeignKey(Scoreboard, on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

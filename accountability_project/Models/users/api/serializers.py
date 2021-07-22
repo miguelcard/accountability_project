@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from Models.users.models import User
-from django.contrib.auth import authenticate
 
-# Register Serializer
 class RegisterSerializer(serializers.ModelSerializer):
     #This password2 doesnt exist in the model itself but it has to be passed at registration, thats why we create it manually
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
@@ -39,6 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "password", 
             "profile_photo",
+            "gender",
             "score_board",
             "is_active", 
             "is_superuser"
