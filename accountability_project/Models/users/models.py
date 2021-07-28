@@ -30,10 +30,11 @@ class UserManager(BaseUserManager):
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    def __str__(self):
+        return self.name
 
 class Language(models.Model):
     name = models.CharField(max_length=50, unique=True, blank=True, null=True)
-
     def __str__(self):
         return self.name
 
@@ -54,8 +55,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     birthdate = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=7, choices=GENDER_CHOICES, blank=True, null=True)
     about = models.CharField(max_length=280, blank=True, null=True)
-    tags = models.ForeignKey(Tag, on_delete=models.PROTECT, blank=True, null=True)
-    languages = models.ForeignKey(Language, on_delete=models.PROTECT, blank=True, null=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+    languages = models.ManyToManyField(Language, blank=True)
     score_board = models.ForeignKey(Scoreboard, on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
