@@ -1,6 +1,5 @@
-from accountability_project.Models.users.models import Tag
 from django.contrib import admin
-from Models.users.models import User, Language
+from Models.users.models import User, Language, Tag
 
 admin.site.register(User)
 admin.site.register(Language)
