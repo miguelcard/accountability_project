@@ -1,3 +1,4 @@
+from datetime import date
 from django.db import models
 from Models.scoreboards.models import Scoreboard
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -26,6 +27,11 @@ class UserManager(BaseUserManager):
     def create_superuser(self, username, email, name=None, last_name=None, password=None, **extra_fields):
         return self._create_user(username, email, name, last_name, password, True, True, **extra_fields)
 
+class Language(models.Model):
+    name = models.CharField(max_length=50, unique=True, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
 
 class User(AbstractBaseUser, PermissionsMixin):
     """create models for the database"""
@@ -41,7 +47,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField('last name', max_length=90, blank=True, null=True)
     email = models.EmailField('your email', max_length=255, unique=True)
     profile_photo = models.ImageField(upload_to='images/profile/', blank=True, null=True)
+    birthdate = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=7, choices=GENDER_CHOICES, blank=True, null=True)
+    about = models.CharField(max_length=280, blank=True, null=True)
+    languages = models.ForeignKey(Language, on_delete=models.PROTECT, blank=True, null=True)
     score_board = models.ForeignKey(Scoreboard, on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -57,6 +66,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
+
+    @property
+    def age(self):
+        today = date.today()
+        born = self.birthdate
+        if born is None:
+            return None
+        rest = 1 if (today.month, today.day) < (born.month, born.day) else 0
+        return today.year - born.year - rest
 
     def natural_key(self):
         return (self.username)

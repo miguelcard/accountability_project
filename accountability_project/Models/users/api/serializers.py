@@ -37,7 +37,11 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "password", 
             "profile_photo",
+            "birthdate",
             "gender",
+            "age",
+            "languages",
+            "about",
             "score_board",
             "is_active", 
             "is_superuser"
