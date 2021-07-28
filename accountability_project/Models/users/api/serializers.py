@@ -40,6 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
             "birthdate",
             "gender",
             "age",
+            "tags",
             "languages",
             "about",
             "score_board",

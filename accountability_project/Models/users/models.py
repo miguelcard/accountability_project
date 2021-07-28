@@ -1,5 +1,6 @@
 from datetime import date
 from django.db import models
+from django.db.models.base import Model
 from Models.scoreboards.models import Scoreboard
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from simple_history.models import HistoricalRecords
@@ -27,6 +28,9 @@ class UserManager(BaseUserManager):
     def create_superuser(self, username, email, name=None, last_name=None, password=None, **extra_fields):
         return self._create_user(username, email, name, last_name, password, True, True, **extra_fields)
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True, blank=True, null=True)
+
 class Language(models.Model):
     name = models.CharField(max_length=50, unique=True, blank=True, null=True)
 
@@ -50,6 +54,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     birthdate = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=7, choices=GENDER_CHOICES, blank=True, null=True)
     about = models.CharField(max_length=280, blank=True, null=True)
+    tags = models.ForeignKey(Tag, on_delete=models.PROTECT, blank=True, null=True)
     languages = models.ForeignKey(Language, on_delete=models.PROTECT, blank=True, null=True)
     score_board = models.ForeignKey(Scoreboard, on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
