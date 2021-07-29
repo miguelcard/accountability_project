@@ -1,8 +1,6 @@
 from rest_framework import serializers
-from Models.users.models import User
-from django.contrib.auth import authenticate
+from Models.users.models import User, Tag, Language
 
-# Register Serializer
 class RegisterSerializer(serializers.ModelSerializer):
     #This password2 doesnt exist in the model itself but it has to be passed at registration, thats why we create it manually
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
@@ -28,7 +26,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = '__all__'
+
 class UserSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
+    languages = LanguageSerializer(many=True, read_only=True)
     class Meta:
         model = User
         fields = (
@@ -39,9 +49,22 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "password", 
             "profile_photo",
+            "birthdate",
+            "gender",
+            "age",
+            "tags",
+            "languages",
+            "about",
             "score_board",
             "is_active", 
             "is_superuser"
+        )
+        read_only_fields = (
+            "age",
+            "tags",
+            "languages"
+            # is_active ?
+            # is_superuser ?
         )
         extra_kwargs = {
             'password': {'write_only': True}
@@ -60,7 +83,6 @@ class UserSerializer(serializers.ModelSerializer):
         return update_user
 
 class UserUpdatedFieldsWithoutPasswordSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         exclude = ("password", "is_active", "is_staff", "is_superuser")
