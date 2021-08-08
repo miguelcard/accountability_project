@@ -47,6 +47,7 @@ LOCAL_APPS = [
     'Models.groups',
     'Models.scoreboards',
     'Models.habits',
+    'Models.mock',
 ]
 
 THIRD_APPS = [
