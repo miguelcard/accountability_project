@@ -58,35 +58,40 @@ class HabitDetailView(APIView):
         return HttpResponse(dump, content_type='application/json')
 
 # Theoretical url: api/v1/habits/3/checkmarks
-class CheckMarksView(APIView):
+class CheckmarksView(APIView):
+    def get(self, request):
 
-    """[
-    {
-        "id": 1,
-        "date": ,
-        "status": "done"
-    },
-    {
-        "id": 2,
-        "date": ,
-        "status": "not_done"
-    },
-    {
-        "id": 3,
-        "date": ,
-        "status": "not_planned"
-    },
-    {
-        "id": 5,
-        "date": ,
-        "status": "done"
-    },
-    {
-        "id": 9,
-        "date": ,
-        "status": "done"
-    }
-    ]"""
+        data = """[
+        {
+            "id": 1,
+            "date": "2021-07-07",
+            "status": "done"
+        },
+        {
+            "id": 2,
+            "date": "2021-07-08",
+            "status": "not_done"
+        },
+        {
+            "id": 3,
+            "date": "2021-07-09",
+            "status": "not_planned"
+        },
+        {
+            "id": 5,
+            "date": "2021-06-12",
+            "status": "done"
+        },
+        {
+            "id": 9,
+            "date": "2021-06-12",
+            "status": "done"
+        }
+        ] """
+
+        parsed_data = json.loads(data)
+        dump = json.dumps(parsed_data)
+        return HttpResponse(dump, content_type='application/json')
 
 # Ask Santi: Do we need a detailed checkmark view?: api/v1/habits/3/checkmarks/1
 # would return:
