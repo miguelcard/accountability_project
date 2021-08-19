@@ -1,3 +1,4 @@
+from rest_framework.permissions import AllowAny
 from Models.users.models import User, Tag, Language
 from Models.users.api.serializers import UserSerializer, UserUpdatedFieldsWithoutPasswordSerializer, LanguageSerializer, TagSerializer
 from rest_framework import generics, mixins 
