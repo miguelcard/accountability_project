@@ -9,8 +9,8 @@ urlpatterns = [
     path('v1/users/update/<int:pk>', UpdateUserWithoutPasswordApiView.as_view()),
     path('v1/users/tags/', GetAllUserTagsApiView.as_view()),
     path('v1/users/languages/', GetAllUserLanguagesApiView.as_view()),
-    path('v1/register/', RegisterAPI.as_view(), name='register'),
-    path('v1/login/', LoginAPI.as_view(), name='login'),
+    path('v1/register/', RegisterAPI.as_view(), name='register'),  # Allow Any
+    path('v1/login/', LoginAPI.as_view(), name='login'),           # Allow Any
     path('v1/logout/',knox_views.LogoutView.as_view(), name='logout'),
     path('v1/logoutall/', knox_views.LogoutAllView.as_view(), name='logoutall')
 ]
