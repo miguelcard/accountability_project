@@ -1,12 +1,14 @@
 from django.urls import path
-from Models.users.api.api import UserGenericApiView, UpdateUserWithoutPasswordApiView, GetAllUserTagsApiView, GetAllUserLanguagesApiView
+from Models.users.api.api import LoggedInUserApiView, DeleteLoggedInUserApiView, UserGenericApiView, UpdateUserWithoutPasswordApiView, GetAllUserTagsApiView, GetAllUserLanguagesApiView
 from Models.users.views import RegisterAPI, LoginAPI
 from knox import views as knox_views
 
 urlpatterns = [
-    path('v1/users/', UserGenericApiView.as_view()),
-    path('v1/users/<int:pk>', UserGenericApiView.as_view()),
-    path('v1/users/update/<int:pk>', UpdateUserWithoutPasswordApiView.as_view()),
+    path('v1.1/user/', LoggedInUserApiView.as_view(), name='user'),
+    path('v1/users/', UserGenericApiView.as_view()), #Only visible to admin
+    path('v1/users/<int:pk>', UserGenericApiView.as_view()), #Only visible to admin
+
+    path('v1/users/update/<int:pk>', UpdateUserWithoutPasswordApiView.as_view()), # Change too, to user specific view
     path('v1/users/tags/', GetAllUserTagsApiView.as_view()),
     path('v1/users/languages/', GetAllUserLanguagesApiView.as_view()),
     path('v1/register/', RegisterAPI.as_view(), name='register'), 

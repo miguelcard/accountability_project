@@ -62,7 +62,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    historical = HistoricalRecords()
+    historical = HistoricalRecords(cascade_delete_history=True)
     objects = UserManager()
 
     class Meta:
