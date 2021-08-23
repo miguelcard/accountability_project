@@ -6,7 +6,7 @@ from Models.users.api.serializers import UserSerializer, UserUpdatedFieldsWithou
 from rest_framework import status, generics, mixins 
 from rest_framework.response import Response
 
-class LoggedInUserApiView(generics.RetrieveDestroyAPIView):
+class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserUpdatedFieldsWithoutPasswordSerializer 
 
     def get_object(self):
@@ -16,20 +16,6 @@ class LoggedInUserApiView(generics.RetrieveDestroyAPIView):
         user = self.request.user
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-class UpdateLoggedInUserApiView(generics.UpdateAPIView):
-    serializer_class = UserUpdatedFieldsWithoutPasswordSerializer
-
-    def get_queryset(self):
-        return self.request.user
-
-    # def get_object(self):
-    #     return self.request.user
-
-class UpdateUserWithoutPasswordApiView(generics.UpdateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserUpdatedFieldsWithoutPasswordSerializer
-    permission_classes = [IsAdminUser]
 
 class GetAllUserTagsApiView(generics.ListAPIView):
     queryset = Tag.objects.all()
@@ -58,3 +44,8 @@ class UserGenericApiView(generics.GenericAPIView,
 
     def delete(self, request, pk=None):
         return self.destroy(request, pk)    
+
+class UpdateUserWithoutPasswordApiView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserUpdatedFieldsWithoutPasswordSerializer
+    permission_classes = [IsAdminUser]

@@ -1,4 +1,4 @@
-from datetime import date
+
 from django.db import models
 from django.db.models.base import Model
 from Models.scoreboards.models import Scoreboard
@@ -71,15 +71,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
-
-    @property
-    def age(self):
-        today = date.today()
-        born = self.birthdate
-        if born is None:
-            return None
-        rest = 1 if (today.month, today.day) < (born.month, born.day) else 0
-        return today.year - born.year - rest
 
     def natural_key(self):
         return (self.username)
