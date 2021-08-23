@@ -57,7 +57,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     about = models.CharField(max_length=280, blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True)
     languages = models.ManyToManyField(Language, blank=True)
-    score_board = models.ForeignKey(Scoreboard, on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)

@@ -55,7 +55,6 @@ class UserSerializer(serializers.ModelSerializer):
             "tags",
             "languages",
             "about",
-            "score_board",
             "is_active", 
             "is_superuser"
         )
@@ -85,4 +84,4 @@ class UserSerializer(serializers.ModelSerializer):
 class UserUpdatedFieldsWithoutPasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        exclude = ("password", "is_active", "is_staff", "is_superuser")
+        exclude = ("password", "is_staff",)
