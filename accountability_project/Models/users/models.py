@@ -1,4 +1,4 @@
-from datetime import date
+
 from django.db import models
 from django.db.models.base import Model
 from Models.scoreboards.models import Scoreboard
@@ -57,12 +57,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     about = models.CharField(max_length=280, blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True)
     languages = models.ManyToManyField(Language, blank=True)
-    score_board = models.ForeignKey(Scoreboard, on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    historical = HistoricalRecords()
+    historical = HistoricalRecords(cascade_delete_history=True)
     objects = UserManager()
 
     class Meta:
@@ -72,15 +71,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
-
-    @property
-    def age(self):
-        today = date.today()
-        born = self.birthdate
-        if born is None:
-            return None
-        rest = 1 if (today.month, today.day) < (born.month, born.day) else 0
-        return today.year - born.year - rest
 
     def natural_key(self):
         return (self.username)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from Models.users.models import User, Tag, Language
+from datetime import date
 
 class RegisterSerializer(serializers.ModelSerializer):
     #This password2 doesnt exist in the model itself but it has to be passed at registration, thats why we create it manually
@@ -37,6 +38,7 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
+    age = serializers.SerializerMethodField(method_name='get_age')
     tags = TagSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     class Meta:
@@ -50,17 +52,15 @@ class UserSerializer(serializers.ModelSerializer):
             "password", 
             "profile_photo",
             "birthdate",
-            "gender",
             "age",
+            "gender",
             "tags",
             "languages",
             "about",
-            "score_board",
             "is_active", 
             "is_superuser"
         )
         read_only_fields = (
-            "age",
             "tags",
             "languages"
             # is_active ?
@@ -82,7 +82,32 @@ class UserSerializer(serializers.ModelSerializer):
         update_user.save()
         return update_user
 
+    def get_age(self, instance):
+        today = date.today()
+        born = instance.birthdate
+        if born is None:
+            return None
+        rest = 1 if (today.month, today.day) < (born.month, born.day) else 0
+        return today.year - born.year - rest
+
 class UserUpdatedFieldsWithoutPasswordSerializer(serializers.ModelSerializer):
+    age = serializers.SerializerMethodField(method_name='get_age')
+    tags = TagSerializer(many=True, read_only=True)
+    languages = LanguageSerializer(many=True, read_only=True)
+
     class Meta:
         model = User
-        exclude = ("password", "is_active", "is_staff", "is_superuser")
+        exclude = ("password", "is_staff")
+        read_only_fields = (
+            "age",
+            "tags",
+            "languages"
+        )
+    
+    def get_age(self, instance):
+        today = date.today()
+        born = instance.birthdate
+        if born is None:
+            return None
+        rest = 1 if (today.month, today.day) < (born.month, born.day) else 0
+        return today.year - born.year - rest

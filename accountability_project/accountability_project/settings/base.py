@@ -158,7 +158,10 @@ REST_FRAMEWORK = {
         'knox.auth.TokenAuthentication',
     ],
     # Schema for API Documentation
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
 }
 
 # Knox Tokens Settings 
