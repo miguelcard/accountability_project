@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from Models.habits.models import Habit
+from Models.habits.models import BaseHabit
 
 
 class HabitSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Habit
+        model = BaseHabit
         fields = '__all__'

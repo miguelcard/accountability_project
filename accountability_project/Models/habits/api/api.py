@@ -1,4 +1,4 @@
-from Models.habits.models import Habit
+from Models.habits.models import BaseHabit
 from Models.habits.api.serializers import HabitSerializer
 from rest_framework import generics, mixins
 
@@ -11,7 +11,7 @@ class HabitGenericApiView(generics.GenericAPIView,
                             mixins.UpdateModelMixin, 
                             mixins.DestroyModelMixin):
 
-    queryset = Habit.objects.all()
+    queryset = BaseHabit.objects.all()
     serializer_class = HabitSerializer
 
     def get(self, request, pk=None):
