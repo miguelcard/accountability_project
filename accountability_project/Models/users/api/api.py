@@ -17,7 +17,7 @@ class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_serializer_class(self):
-        if(self.request.method == 'PUT'):
+        if(self.request is not None and self.request.method == 'PUT'):
             return UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer
         return GetAuthenticatedUserSerializer
 

@@ -1,7 +1,6 @@
 
 from django.db import models
 from django.db.models.base import Model
-from Models.scoreboards.models import Scoreboard
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from simple_history.models import HistoricalRecords
 

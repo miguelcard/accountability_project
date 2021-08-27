@@ -25,7 +25,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('Models.users.api.urls')),
     path('api/', include('Models.groups.api.urls')),
-    path('api/', include('Models.scoreboards.api.urls')),
     path('api/', include('Models.habits.api.urls'))
 ]
 
