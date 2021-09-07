@@ -13,17 +13,9 @@ class BaseHabit(models.Model):
 
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255)
-
-    # start_day = models.DateTimeField(blank=True, null=True)
-    # finish_day = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # class Meta:
-    #     """Meta definition for MODELNAME."""
-        
-    #     verbose_name = 'Habit'
-    #     verbose_name_plural = 'Habits'
 
     def __str__(self):
         """Unicode representation of MODELNAME."""
@@ -32,9 +24,22 @@ class BaseHabit(models.Model):
 class RecurrentHabit(BaseHabit):
 
     TIME_FRAME_CHOICES = [
-    ('D', 'Daily'),
-    ('W', 'Weekly'),
-    ('M', 'Monthly'),
+    ('W', 'Week'),
+    ('M', 'Month'),
     ]
-    time_frame = models.CharField(max_length=1, choices=TIME_FRAME_CHOICES, blank=True, null=True)
-     # times ... think about this, how will it be chosen from front end ?  maybe delete one time frame (Monthly)
+    times = models.IntegerField()
+    time_frame = models.CharField(max_length=1, choices=TIME_FRAME_CHOICES)
+    # Here the user can set how many times per week/month to do the habit
+
+    class Meta:
+        verbose_name = 'Recurrent Habit'
+        verbose_name_plural = 'Recurrent Habits'
+
+class Goal(BaseHabit):
+
+    start_date = models.DateTimeField(blank=True, null=True) # Make default today from front-end
+    finish_date = models.DateTimeField()
+
+    class Meta:
+        verbose_name = 'Goal'
+        verbose_name_plural = 'Goals'
