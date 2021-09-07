@@ -8,6 +8,7 @@ class BaseHabit(models.Model):
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True, null=True) # in this case tags are same as user tags, but we can create different tags for habits
+    #space = models.ManyToManyField(Space)
     # Add space here
     # For mapping back from one model to other see "symmetrical" and "related_name"
 
