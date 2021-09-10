@@ -1,5 +1,6 @@
 from Models.users.models import Tag
 from Models.users.models import User
+from Models.spaces.models import Space
 from django.db import models
 
 # This Habit is an abstraction and the real implementation should be done either by recurrent habit or goal
@@ -7,11 +8,8 @@ class BaseHabit(models.Model):
     """Model definition for MODELNAME."""
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-    tags = models.ManyToManyField(Tag, blank=True, null=True) # in this case tags are same as user tags, but we can create different tags for habits
-    #space = models.ManyToManyField(Space)
-    # Add space here
-    # For mapping back from one model to other see "symmetrical" and "related_name"
-
+    tags = models.ManyToManyField(Tag, blank=True) # in this case tags are same as user tags, but we can create different tags for habits
+    space = models.ManyToManyField(Space, blank=True)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
