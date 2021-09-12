@@ -1,3 +1,4 @@
+from django.db.models.base import Model
 from Models.users.models import Tag
 from Models.users.models import User
 from Models.spaces.models import Space
@@ -54,7 +55,8 @@ class CheckMark(models.Model):
     satus = models.CharField(max_length=13, choices=DATE_STATUS_CHOICES, default='UNDEFINED')
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
 
-class Milestone():
+class Milestone(models.Model):
     name = models.CharField(max_length= 70)
     description = models.TextField(max_length=200, blank=True, null=True)
     date = models.DateTimeField()
+    habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
