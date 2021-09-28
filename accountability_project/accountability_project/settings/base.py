@@ -46,7 +46,7 @@ LOCAL_APPS = [
     'Models.users',
     'Models.groups',
     'Models.habits',
-    'Models.spaces'
+    'Models.spaces',
 ]
 
 THIRD_APPS = [
