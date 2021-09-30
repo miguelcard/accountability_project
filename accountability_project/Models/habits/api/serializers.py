@@ -11,6 +11,9 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
     class Meta:
         model = RecurrentHabit
         fields = '__all__'
+        read_only_fields = (
+            "owner",
+        )
 
 class HabitTagSerializer(serializers.ModelSerializer):
     class Meta:

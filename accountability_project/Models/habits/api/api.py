@@ -16,6 +16,9 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
         if(self.request is not None and self.request.method == 'POST'):
             return RecurrentHabitSerializerToWrite
         return RecurrentHabitSerializerToRead
+    
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 #  #Maybe not the way 
