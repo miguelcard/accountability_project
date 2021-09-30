@@ -1,7 +1,8 @@
+from Models.habits.api.api import RecurrentHabitApiView
 from django.urls import path
 
 urlpatterns = [
-    # path('v1/habits/', HabitGenericApiView.as_view()),
+    path('v1/habits/', RecurrentHabitApiView.as_view(), name='habits'),
     # path('v1/habits/', HabitGenericApiView.as_view()),
     # path('v1/habits/<int:pk>', HabitGenericApiView.as_view()),
 

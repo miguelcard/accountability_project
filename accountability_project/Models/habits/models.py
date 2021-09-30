@@ -1,16 +1,24 @@
 from django.db.models.base import Model
-from Models.users.models import Tag
 from Models.users.models import User
 from Models.spaces.models import Space
 from django.db import models
+
+# Tags for the habits
+class HabitTag(models.Model):
+    name = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Habit Tag'
+        verbose_name_plural = 'Habit Tags'
 
 # This Habit is an abstraction and the real implementation should be done either by recurrent habit or goal
 class BaseHabit(models.Model):
     """Model definition for MODELNAME."""
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE) 
-    # in this case tags are same as user tags, but we can create different tags for habits
-    tags = models.ManyToManyField(Tag, blank=True) 
+    tags = models.ManyToManyField(HabitTag, blank=True) 
     space = models.ManyToManyField(Space, blank=True)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255, blank=True, null=True)
@@ -55,8 +63,17 @@ class CheckMark(models.Model):
     satus = models.CharField(max_length=13, choices=DATE_STATUS_CHOICES, default='UNDEFINED')
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = 'Check Mark'
+        verbose_name_plural = 'Check Marks'
+
 class Milestone(models.Model):
     name = models.CharField(max_length= 70)
     description = models.TextField(max_length=200, blank=True, null=True)
     date = models.DateTimeField()
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Milestone'
+        verbose_name_plural = 'Milestones'
+    

@@ -1,18 +1,16 @@
 from django.http import request
 from Models.habits.api.serializers import RecurrentHabitSerializer
-from Models.users.models import User
-from Models.habits.models import BaseHabit
-from Models.habits.api.serializers import BaseHabitSerializer
-from rest_framework import generics, mixins
+from Models.habits.models import BaseHabit, RecurrentHabit
+# from Models.habits.api.serializers import BaseHabitSerializer
+from rest_framework import generics
 
 """ ---------views for habits--------"""
 
-class RecurrentHabitApiView(generics.RetrieveUpdateDestroyAPIView):
-    # queryset = # Only Recurrent habits belonging to current user 
+class RecurrentHabitApiView(generics.ListAPIView): 
     serializer_class = RecurrentHabitSerializer
 
     def get_queryset(self):
-        return BaseHabit.objects.filter(owner=self.request.user) #TEST!
+        return RecurrentHabit.objects.filter(owner=self.request.user)  #TEST!
 
 
 #  #Maybe not the way 
