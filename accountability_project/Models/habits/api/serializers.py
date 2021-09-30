@@ -6,19 +6,20 @@ from rest_framework import serializers
 #     class Meta:
 #         model = BaseHabit
 #         fields = '__all__'
+
+class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
+    class Meta:
+        model = RecurrentHabit
+        fields = '__all__'
+
 class HabitTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = HabitTag
         fields = '__all__'
 
-class RecurrentHabitSerializer(serializers.ModelSerializer):
-    tags = HabitTagSerializer(many=True, read_only=True) # write explicit fields? add in read_only_fields
-    class Meta:
-        model = RecurrentHabit
-        fields = '__all__'
-        read_only_fields = (
-            "tags",
-        )
+class RecurrentHabitSerializerToRead(RecurrentHabitSerializerToWrite):
+    tags = HabitTagSerializer(many=True, read_only=True)
+    
 
 class GoalSerializer(serializers.ModelSerializer):
     class Meta:

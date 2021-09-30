@@ -1,16 +1,21 @@
 from django.http import request
-from Models.habits.api.serializers import RecurrentHabitSerializer
+from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite
 from Models.habits.models import BaseHabit, RecurrentHabit
 # from Models.habits.api.serializers import BaseHabitSerializer
 from rest_framework import generics
 
 """ ---------views for habits--------"""
 
-class RecurrentHabitApiView(generics.ListAPIView): 
-    serializer_class = RecurrentHabitSerializer
+class RecurrentHabitApiView(generics.ListCreateAPIView): 
+    serializer_class = RecurrentHabitSerializerToRead
 
     def get_queryset(self):
-        return RecurrentHabit.objects.filter(owner=self.request.user)  #TEST!
+        return RecurrentHabit.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if(self.request is not None and self.request.method == 'POST'):
+            return RecurrentHabitSerializerToWrite
+        return RecurrentHabitSerializerToRead
 
 
 #  #Maybe not the way 
