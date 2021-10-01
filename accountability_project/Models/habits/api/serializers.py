@@ -14,16 +14,25 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
         read_only_fields = (
             "owner",
         )
+    
+    def to_representation(self, instance):
+        serializer = RecurrentHabitSerializerToRead(instance)
+        return serializer.data
 
 class HabitTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = HabitTag
         fields = '__all__'
 
-class RecurrentHabitSerializerToRead(RecurrentHabitSerializerToWrite):
+class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
+    class Meta:
+        model = RecurrentHabit
+        fields = '__all__'
+        read_only_fields = (
+            "owner",
+        )
     
-
 class GoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Goal
