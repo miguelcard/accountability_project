@@ -1,4 +1,5 @@
 from django.http import request
+from rest_framework.serializers import Serializer
 from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite
 from Models.habits.models import BaseHabit, RecurrentHabit
 # from Models.habits.api.serializers import BaseHabitSerializer
@@ -19,6 +20,17 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = RecurrentHabitSerializerToWrite
+
+    def get_queryset(self):
+        return RecurrentHabit.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if(self.request is not None and self.request.method == 'GET'):
+            return RecurrentHabitSerializerToRead
+        return RecurrentHabitSerializerToWrite
 
 
 #  #Maybe not the way 
