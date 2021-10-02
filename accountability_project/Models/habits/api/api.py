@@ -1,12 +1,15 @@
 from django.http import request
 from rest_framework.serializers import Serializer
-from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite
-from Models.habits.models import BaseHabit, RecurrentHabit
+from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite
+from Models.habits.models import BaseHabit, RecurrentHabit, Goal
 # from Models.habits.api.serializers import BaseHabitSerializer
 from rest_framework import generics
 
 """ ---------views for habits--------"""
 
+""" ---------views for recurrent habits-------"""
+
+# GET & POST
 class RecurrentHabitApiView(generics.ListCreateAPIView): 
     serializer_class = RecurrentHabitSerializerToRead
 
@@ -21,6 +24,7 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+# PUT, PATCH, DELETE & GET (detailed)
 class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RecurrentHabitSerializerToWrite
 
@@ -32,6 +36,33 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
             return RecurrentHabitSerializerToRead
         return RecurrentHabitSerializerToWrite
 
+""" ---------views for Goals-------"""
+# GET & POST
+class GoalApiView(generics.ListCreateAPIView): 
+    serializer_class = GoalSerializerToRead
+
+    def get_queryset(self):
+        return Goal.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if(self.request is not None and self.request.method == 'POST'):
+            return GoalSerializerToWrite
+        return GoalSerializerToRead
+    
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+        
+# PUT, PATCH, DELETE & GET (detailed)
+class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = GoalSerializerToRead
+
+    def get_queryset(self):
+        return Goal.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if(self.request is not None and self.request.method == 'GET'):
+            return GoalSerializerToRead
+        return GoalSerializerToWrite
 
 #  #Maybe not the way 
 # class BaseHabitApiView(generics.RetrieveUpdateDestroyAPIView):

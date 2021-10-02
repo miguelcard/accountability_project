@@ -1,4 +1,6 @@
 from django.db.models.base import Model
+from django.db.models.fields import CharField
+from rest_framework.fields import ReadOnlyField
 from Models.users.models import User
 from Models.spaces.models import Space
 from django.db import models
@@ -35,9 +37,10 @@ class RecurrentHabit(BaseHabit):
     ('W', 'Week'),
     ('M', 'Month'),
     ]
+    # Here the user can set how many times per week/month to do the habit
     times = models.IntegerField()
     time_frame = models.CharField(max_length=1, choices=TIME_FRAME_CHOICES)
-    # Here the user can set how many times per week/month to do the habit
+    type = models.CharField(default='recurrent', editable=False, max_length=11)
 
     class Meta:
         verbose_name = 'Recurrent Habit'
@@ -47,6 +50,7 @@ class Goal(BaseHabit):
 
     start_date = models.DateTimeField(blank=True, null=True) # Make default "today" from front-end
     finish_date = models.DateTimeField()
+    type = models.CharField(default='goal', editable=False, max_length=11)
 
     class Meta:
         verbose_name = 'Goal'
@@ -62,7 +66,7 @@ class CheckMark(models.Model):
     date = models.DateTimeField()
     satus = models.CharField(max_length=13, choices=DATE_STATUS_CHOICES, default='UNDEFINED')
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
-
+    
     class Meta:
         verbose_name = 'Check Mark'
         verbose_name_plural = 'Check Marks'
