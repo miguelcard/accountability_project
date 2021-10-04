@@ -1,9 +1,10 @@
-from django.http import request
+from django.http import request, response
 from rest_framework.serializers import Serializer
 from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite
 from Models.habits.models import BaseHabit, RecurrentHabit, Goal
 # from Models.habits.api.serializers import BaseHabitSerializer
 from rest_framework import generics
+from rest_framework.response import Response
 
 """ ---------views for habits--------"""
 
@@ -51,7 +52,7 @@ class GoalApiView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
-        
+
 # PUT, PATCH, DELETE & GET (detailed)
 class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GoalSerializerToRead
@@ -63,6 +64,49 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
         if(self.request is not None and self.request.method == 'GET'):
             return GoalSerializerToRead
         return GoalSerializerToWrite
+
+
+
+
+
+
+# GET    MAYBE THE POST DOES NOT MAKE MUCH SENSE WITH THIS ONE 
+class AllHabitsApiView(generics.GenericAPIView): 
+    
+    def get(self, request, *args, **kwargs):
+        recurrent_habits = RecurrentHabit.objects.filter(owner=self.request.user)
+        goals = Goal.objects.filter(owner=self.request.user)
+        context = {"request": request,}
+        recurrent_habits_serializer = RecurrentHabitSerializerToRead(recurrent_habits, many=True, context=context)
+        goal_serializer = GoalSerializerToRead(goals, many=True, context=context)
+        # can I sort and combine these 2 before?
+        response_data = recurrent_habits_serializer.data + goal_serializer.data
+        return Response(response_data)
+
+
+
+    def get_queryset(self):
+        return Habit.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if(self.request is not None and self.request.method == 'POST'):
+            return HabitSerializerToWrite
+        return HabitSerializerToRead # MAYBE NOT NEEDED HERE
+    
+    # def perform_create(self, serializer):
+    #     serializer.save(owner=self.request.user)
+
+# PUT, PATCH, DELETE & GET (detailed) # MAYBE PUT AND PATCH NO SENSE ?? OR YES?
+class AllHabitsDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = RecurrentHabitSerializerToWrite
+
+    def get_queryset(self):
+        return RecurrentHabit.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if(self.request is not None and self.request.method == 'GET'):
+            return HabitSerializerToRead
+        return HabitSerializerToWrite
 
 #  #Maybe not the way 
 # class BaseHabitApiView(generics.RetrieveUpdateDestroyAPIView):
