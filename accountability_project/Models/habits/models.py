@@ -4,6 +4,7 @@ from rest_framework.fields import ReadOnlyField
 from Models.users.models import User
 from Models.spaces.models import Space
 from django.db import models
+from model_utils.managers import InheritanceManager 
 
 # Tags for the habits
 class HabitTag(models.Model):
@@ -18,6 +19,7 @@ class HabitTag(models.Model):
 # This Habit is an abstraction and the real implementation should be done either by recurrent habit or goal
 class BaseHabit(models.Model):
     """Model definition for MODELNAME."""
+    objects = InheritanceManager()
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE) 
     tags = models.ManyToManyField(HabitTag, blank=True) 
