@@ -59,11 +59,3 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = HabitTag
         fields = '__all__'
-
-# just to test
-class GeneralHabitSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BaseHabit
-        fields = '__all__'
-
-    # plus all the other fields

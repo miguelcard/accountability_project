@@ -5,6 +5,7 @@ from Models.users.models import User
 from Models.spaces.models import Space
 from django.db import models
 from model_utils.managers import InheritanceManager 
+from datetime import datetime
 
 # Tags for the habits
 class HabitTag(models.Model):
@@ -41,7 +42,7 @@ class RecurrentHabit(BaseHabit):
     ]
     # Here the user can set how many times per week/month to do the habit
     times = models.IntegerField()
-    time_frame = models.CharField(max_length=1, choices=TIME_FRAME_CHOICES)
+    time_frame = models.CharField(max_length=1, choices=TIME_FRAME_CHOICES)  # Should these be made optional?
     type = models.CharField(default='recurrent', editable=False, max_length=11)
 
     class Meta:
@@ -50,8 +51,8 @@ class RecurrentHabit(BaseHabit):
 
 class Goal(BaseHabit):
 
-    start_date = models.DateTimeField(blank=True, null=True) # Make default "today" from front-end
-    finish_date = models.DateTimeField()
+    start_date = models.DateTimeField(default=datetime.now, blank=True, null=True)
+    finish_date = models.DateTimeField(blank=True, null=True) # If not filled, write in front end it is recomended!
     type = models.CharField(default='goal', editable=False, max_length=11)
 
     class Meta:
