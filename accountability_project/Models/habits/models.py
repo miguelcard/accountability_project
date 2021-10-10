@@ -29,7 +29,7 @@ class BaseHabit(models.Model):
     description = models.TextField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    type = models.CharField(editable=False, max_length=11)
 
     def __str__(self):
         """Unicode representation of MODELNAME."""
@@ -43,21 +43,33 @@ class RecurrentHabit(BaseHabit):
     # Here the user can set how many times per week/month to do the habit
     times = models.IntegerField()
     time_frame = models.CharField(max_length=1, choices=TIME_FRAME_CHOICES)  # Should these be made optional?
-    type = models.CharField(default='recurrent', editable=False, max_length=11)
+    #type = models.CharField(default='recurrent', editable=False, max_length=11)
 
     class Meta:
         verbose_name = 'Recurrent Habit'
         verbose_name_plural = 'Recurrent Habits'
+    
+    def save(self, *args, **kwargs):
+        self.type = 'recurrent'
+        super(BaseHabit, self).save(*args, **kwargs) 
+
+    # def save(self, force_insert: bool, force_update: bool, using: Optional[str], update_fields: Optional[Iterable[str]]) -> None:
+    #     return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        
 
 class Goal(BaseHabit):
 
     start_date = models.DateTimeField(default=datetime.now, blank=True, null=True)
     finish_date = models.DateTimeField(blank=True, null=True) # If not filled, write in front end it is recomended!
-    type = models.CharField(default='goal', editable=False, max_length=11)
+    #type = models.CharField(default='goal', editable=False, max_length=11)
 
     class Meta:
         verbose_name = 'Goal'
         verbose_name_plural = 'Goals'
+
+    def save(self, *args, **kwargs):
+        self.type = 'goal'
+        super(BaseHabit, self).save(*args, **kwargs) 
 
 class CheckMark(models.Model):
     DATE_STATUS_CHOICES = [
@@ -78,7 +90,7 @@ class Milestone(models.Model):
     name = models.CharField(max_length= 70)
     description = models.TextField(max_length=200, blank=True, null=True)
     date = models.DateTimeField()
-    habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
+    habit = models.ForeignKey(Goal, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Milestone'

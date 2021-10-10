@@ -1,12 +1,8 @@
-from django.http import request, response
-from rest_framework import serializers
-from rest_framework.serializers import Serializer
 from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite
 from Models.habits.models import BaseHabit, RecurrentHabit, Goal
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter
-from itertools import chain
 
 """ ---------views for habits--------"""
 
@@ -76,19 +72,34 @@ class AllHabitsApiView(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         context = {"request": request,}
-        # All Habits queryset
-        all_habits = BaseHabit.objects.filter(owner=self.request.user).select_subclasses()
-        filtered_habits = self.filter_queryset(all_habits)
-        
-        response_data = []
-        for habit in filtered_habits:
-            if habit.type == "recurrent":
-                specific_serializer = RecurrentHabitSerializerToRead(habit, context=context)
-            else:
-                specific_serializer = GoalSerializerToRead(habit, context=context)
-            response_data.append(specific_serializer.data)
-         
-        return Response(response_data)
+        pk = kwargs.get('pk')
+        # Get specific habit
+        if pk:
+            try:
+                habit = BaseHabit.objects.get(pk=pk)
+                if habit.type == 'recurrent':
+                    habit_specific = RecurrentHabit.objects.get(pk=pk)
+                    habit_serializer = RecurrentHabitSerializerToRead(habit_specific, context=context)
+                else:
+                    habit_specific = Goal.objects.get(pk=pk)
+                    habit_serializer = GoalSerializerToRead(habit_specific, context=context) 
+            except BaseHabit.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(habit_serializer.data)
+        # Get all habits
+        else: 
+            # All Habits queryset
+            all_habits = BaseHabit.objects.filter(owner=self.request.user).select_subclasses()
+            filtered_habits = self.filter_queryset(all_habits)
+            
+            response_data = []
+            for habit in filtered_habits:
+                if habit.type == 'recurrent':
+                    specific_serializer = RecurrentHabitSerializerToRead(habit, context=context)
+                else:
+                    specific_serializer = GoalSerializerToRead(habit, context=context)
+                response_data.append(specific_serializer.data) 
+            return Response(response_data)
         
 
 # PUT, PATCH, DELETE & GET (detailed) # MAYBE PUT AND PATCH NO SENSE ?? OR YES?
