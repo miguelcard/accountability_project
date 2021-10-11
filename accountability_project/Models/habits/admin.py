@@ -1,5 +1,9 @@
 from django.contrib import admin
-from Models.habits.models import Habit
+from Models.habits.models import RecurrentHabit, Goal, CheckMark, Milestone, HabitTag
 
-admin.site.register(Habit)
 # Register your models here.
+admin.site.register(RecurrentHabit)
+admin.site.register(Goal)
+admin.site.register(CheckMark)
+admin.site.register(Milestone)
+admin.site.register(HabitTag)
