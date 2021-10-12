@@ -64,7 +64,7 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
             return GoalSerializerToRead
         return GoalSerializerToWrite
 
-# GET    MAYBE THE POST DOES NOT MAKE MUCH SENSE WITH THIS ONE 
+# GET & GET (detailed) 
 class AllHabitsApiView(generics.GenericAPIView): 
 
     filter_backends = [OrderingFilter]
@@ -100,16 +100,3 @@ class AllHabitsApiView(generics.GenericAPIView):
                     specific_serializer = GoalSerializerToRead(habit, context=context)
                 response_data.append(specific_serializer.data) 
             return Response(response_data)
-        
-
-# PUT, PATCH, DELETE & GET (detailed) # MAYBE PUT AND PATCH NO SENSE ?? OR YES?
-# class AllHabitsDetailApiView(generics.RetrieveUpdateDestroyAPIView):
-#     serializer_class = RecurrentHabitSerializerToWrite
-
-#     def get_queryset(self):
-#         return RecurrentHabit.objects.filter(owner=self.request.user)
-
-#     def get_serializer_class(self):
-#         if(self.request is not None and self.request.method == 'GET'):
-#             return HabitSerializerToRead
-#         return HabitSerializerToWrite

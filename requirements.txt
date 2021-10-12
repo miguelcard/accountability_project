@@ -18,6 +18,7 @@ typing-extensions==3.7.4.3
 django-rest-knox==4.01
 pillow==8.3.2
 django-model-utils==4.1.1
+django.filter==21.1
 
 # libraries for API documentation (just development)
 pyyaml==5.4.1
