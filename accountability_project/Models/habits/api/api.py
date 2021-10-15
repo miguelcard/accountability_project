@@ -1,8 +1,9 @@
-from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite
-from Models.habits.models import BaseHabit, RecurrentHabit, Goal
+from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite, HabitTagSerializer
+from Models.habits.models import BaseHabit, RecurrentHabit, Goal, HabitTag
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.filters import OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 """ ---------views for habits--------"""
 
@@ -11,6 +12,10 @@ from rest_framework.filters import OrderingFilter
 # GET & POST
 class RecurrentHabitApiView(generics.ListCreateAPIView): 
     serializer_class = RecurrentHabitSerializerToRead
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_fields = ['title', 'time_frame', 'times', 'tags__name'] # Space (id), 
+    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'time_frame', 'times', 'tags__name']  
+    search_fields = ['title', 'description', 'time_frame', 'times', 'tags__name'] # Space
 
     def get_queryset(self):
         return RecurrentHabit.objects.filter(owner=self.request.user)
@@ -40,6 +45,10 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 # GET & POST
 class GoalApiView(generics.ListCreateAPIView): 
     serializer_class = GoalSerializerToRead
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_fields = ['title', 'start_date', 'finish_date', 'tags__name'] # Space (id), Milestone_name
+    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'start_date', 'finish_date', 'tags__name']  
+    search_fields = ['title', 'description', 'start_date', 'finish_date', 'tags__name'] # Space, Milestone_name
 
     def get_queryset(self):
         return Goal.objects.filter(owner=self.request.user)
@@ -64,12 +73,14 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
             return GoalSerializerToRead
         return GoalSerializerToWrite
 
-# GET    MAYBE THE POST DOES NOT MAKE MUCH SENSE WITH THIS ONE 
+# GET & GET (detailed) 
 class AllHabitsApiView(generics.GenericAPIView): 
 
-    filter_backends = [OrderingFilter]
-    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'type']
-
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_fields = ['type', 'title', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name'] # Space (id),
+    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name']
+    search_fields = ['title', 'description', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'tags__name'] # Space
+    
     def get(self, request, *args, **kwargs):
         context = {"request": request,}
         pk = kwargs.get('pk')
@@ -100,16 +111,8 @@ class AllHabitsApiView(generics.GenericAPIView):
                     specific_serializer = GoalSerializerToRead(habit, context=context)
                 response_data.append(specific_serializer.data) 
             return Response(response_data)
-        
 
-# PUT, PATCH, DELETE & GET (detailed) # MAYBE PUT AND PATCH NO SENSE ?? OR YES?
-# class AllHabitsDetailApiView(generics.RetrieveUpdateDestroyAPIView):
-#     serializer_class = RecurrentHabitSerializerToWrite
-
-#     def get_queryset(self):
-#         return RecurrentHabit.objects.filter(owner=self.request.user)
-
-#     def get_serializer_class(self):
-#         if(self.request is not None and self.request.method == 'GET'):
-#             return HabitSerializerToRead
-#         return HabitSerializerToWrite
+# view to show all existent tags for user to choose from
+class GetAllHabitTagsApiView(generics.ListAPIView):
+    queryset = HabitTag.objects.all()
+    serializer_class = HabitTagSerializer

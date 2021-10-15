@@ -2,12 +2,6 @@ from Models.habits.models import BaseHabit
 from Models.habits.models import Goal, RecurrentHabit, HabitTag
 from rest_framework import serializers
 
-#Not needed?
-# class BaseHabitSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = BaseHabit
-#         fields = '__all__'
-
 class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
     class Meta:
         model = RecurrentHabit
@@ -55,7 +49,3 @@ class GoalSerializerToRead(serializers.ModelSerializer):
             "owner",
         )
 
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HabitTag
-        fields = '__all__'
