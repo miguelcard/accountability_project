@@ -1,4 +1,4 @@
-from Models.habits.api.api import RecurrentHabitApiView, RecurrentHabitDetailApiView, GoalApiView, GoalDetailApiView, AllHabitsApiView
+from Models.habits.api.api import RecurrentHabitApiView, RecurrentHabitDetailApiView, GoalApiView, GoalDetailApiView, AllHabitsApiView, GetAllHabitTagsApiView
 from django.urls import path
 
 urlpatterns = [
@@ -8,4 +8,5 @@ urlpatterns = [
     path('v1/habits/recurrent/<int:pk>', RecurrentHabitDetailApiView.as_view(), name='recurrent-detail'),
     path('v1/habits/goals/', GoalApiView.as_view(), name='goal'),
     path('v1/habits/goals/<int:pk>', GoalDetailApiView.as_view(), name='goal-detail'),
+    path('v1/habits/tags/', GetAllHabitTagsApiView.as_view(), name='habit-tags'),
 ]

@@ -49,7 +49,3 @@ class GoalSerializerToRead(serializers.ModelSerializer):
             "owner",
         )
 
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HabitTag
-        fields = '__all__'
