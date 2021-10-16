@@ -4,6 +4,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPagination
 
 """ ---------views for habits--------"""
 
@@ -11,6 +12,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 # GET & POST
 class RecurrentHabitApiView(generics.ListCreateAPIView): 
+    pagination_class = AllHabitsPagination
     serializer_class = RecurrentHabitSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['title', 'time_frame', 'times', 'tags__name'] # Space (id), 
@@ -44,6 +46,7 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 # GET & POST
 class GoalApiView(generics.ListCreateAPIView): 
+    pagination_class = AllHabitsPagination
     serializer_class = GoalSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['title', 'start_date', 'finish_date', 'tags__name'] # Space (id), Milestone_name
@@ -73,9 +76,11 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
             return GoalSerializerToRead
         return GoalSerializerToWrite
 
+
+""" ---------view for both Recurrent Habits and Goals-------"""
 # GET & GET (detailed) 
 class AllHabitsApiView(generics.GenericAPIView): 
-
+    pagination_class = AllHabitsPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['type', 'title', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name'] # Space (id),
     ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name']
@@ -102,17 +107,24 @@ class AllHabitsApiView(generics.GenericAPIView):
             # All Habits queryset
             all_habits = BaseHabit.objects.filter(owner=self.request.user).select_subclasses()
             filtered_habits = self.filter_queryset(all_habits)
-            
+            page = self.paginate_queryset(filtered_habits)
+
+            query_results = page if page is not None else filtered_habits
             response_data = []
-            for habit in filtered_habits:
+            for habit in query_results:
                 if habit.type == 'recurrent':
                     specific_serializer = RecurrentHabitSerializerToRead(habit, context=context)
                 else:
                     specific_serializer = GoalSerializerToRead(habit, context=context)
                 response_data.append(specific_serializer.data) 
-            return Response(response_data)
+                
+            return self.get_paginated_response(response_data) if page is not None else Response(response_data)
 
-# view to show all existent tags for user to choose from
+# Get view to show all existent tags for user to choose from
 class GetAllHabitTagsApiView(generics.ListAPIView):
+    filter_backends = [OrderingFilter, SearchFilter]
+    ordering_fields = ['name']  
+    search_fields = ['name'] 
     queryset = HabitTag.objects.all()
     serializer_class = HabitTagSerializer
+    pagination_class = HabitTagsPagination
