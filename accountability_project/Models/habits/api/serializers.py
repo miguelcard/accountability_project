@@ -55,35 +55,23 @@ class GoalSerializerToWrite(serializers.ModelSerializer):
 class FilteredListSerializer(serializers.ListSerializer):
 
     def to_representation(self, data):
-        # if just from parameter sent use it until today
-        # if just to parameter sent, use it -7 days
-        # if both sent use those ranges
-        # else default 7 days ago to today 
 
         checkmarks_from = self.context['request'].GET.get('checkmarks_from', None)
         checkmarks_to = self.context['request'].GET.get('checkmarks_to', None)
         
         if (checkmarks_from != None and checkmarks_to != None):
-            #filter range
-            print('BOTH FROM & TO DEFINED')
-            pass
+            data = data.filter(date__range=[checkmarks_from, checkmarks_to])
         elif(checkmarks_from !=None):
-            print('ONLY FROM DEFINED')
-            # data = data.filter(date__gt=checkmarks_from) 
+            data = data.filter(date__gt=checkmarks_from) 
         elif(checkmarks_to != None):
-            print('ONLY TO DEFINED')
-            
-            # data = filter from that dats -7 
+            checkmarks_to_date = datetime.datetime.strptime(checkmarks_to, '%Y-%m-%d')
+            last_week = checkmarks_to_date - datetime.timedelta(days = 7)
+            data = data.filter(date__range=[last_week, checkmarks_to])
         else:
-            print('NONE DEFINED')
-            pass
-             # jsut default today -7
+            today = datetime.date.today()
+            last_week = datetime.date.today() - datetime.timedelta(days = 7)
+            data = data.filter(date__range=[last_week, today])
 
-        #data = data.filter(date__gt=checkmarks_from) 
-        # data = data.filter(date__gt=datetime.date(2021,10,18)) # user=self.context['request'].user, edition__hide=False)
-        # These two are the same: 
-        # self.get_query_set().filter(user__isnull=False, modelField=x)
-        # self.get_query_set().filter(modelField=x).exclude(user__isnull=True) 
         return super(FilteredListSerializer, self).to_representation(data)
 
 class CheckMarkNestedSerializer(serializers.ModelSerializer):
@@ -95,7 +83,6 @@ class CheckMarkNestedSerializer(serializers.ModelSerializer):
 
 class GoalSerializerToRead(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
-    # checkmark_set = CheckMarkSerializer(many=True, read_only=True)
     checkmarks = CheckMarkNestedSerializer(many=True, read_only=True)
 
     class Meta:

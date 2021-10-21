@@ -31,10 +31,6 @@ class BaseHabit(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     type = models.CharField(editable=False, max_length=11)
 
-#SHow only from last 7 dates, sort by default by date descending... Better in API view get_queryset maybe? ...(where you can read kwargs)
-    # def checkmarks(self):
-    #     return self.checkmark_set.exclude(date__lt=datetime.date(2005,1,7)) # shoul be todays date -7 days ..
-
     def __str__(self):
         """Unicode representation of MODELNAME."""
         return f'{self.title}'
