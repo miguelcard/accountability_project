@@ -31,6 +31,9 @@ class BaseHabit(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     type = models.CharField(editable=False, max_length=11)
 
+    class Meta:
+        ordering = ['-created_at']
+
     def __str__(self):
         """Unicode representation of MODELNAME."""
         return f'{self.title}'
@@ -74,8 +77,10 @@ class CheckMark(models.Model):
     ('DONE', 'done'),
     ('NOT_DONE', 'not done'),
     ]
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     date = models.DateTimeField()
-    satus = models.CharField(max_length=13, choices=DATE_STATUS_CHOICES, default='UNDEFINED')
+    status = models.CharField(max_length=13, choices=DATE_STATUS_CHOICES, default='UNDEFINED')
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE, related_name="checkmarks")
     
     class Meta:
@@ -84,6 +89,8 @@ class CheckMark(models.Model):
         ordering = ['-date']
 
 class Milestone(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length= 70)
     description = models.TextField(max_length=200, blank=True, null=True)
     date = models.DateTimeField()

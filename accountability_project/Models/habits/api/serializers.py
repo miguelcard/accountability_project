@@ -1,6 +1,3 @@
-from re import S
-from django.db import models
-from django.db.models import fields
 from Models.habits.models import Goal, RecurrentHabit, HabitTag, BaseHabit, CheckMark
 from rest_framework import serializers
 import datetime
@@ -11,6 +8,9 @@ class FilteredListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
         checkmarks_from = self.context['request'].GET.get('checkmarks_from', None)
         checkmarks_to = self.context['request'].GET.get('checkmarks_to', None)
+
+        if isinstance(data, list):
+            return super(FilteredListSerializer, self).to_representation(data)
         
         if (checkmarks_from != None and checkmarks_to != None):
             data = data.filter(date__range=[checkmarks_from, checkmarks_to])
@@ -21,7 +21,7 @@ class FilteredListSerializer(serializers.ListSerializer):
             last_week = checkmarks_to_date - datetime.timedelta(days = 7)
             data = data.filter(date__range=[last_week, checkmarks_to])
         else:
-            today = datetime.date.today()
+            today = datetime.date.today() + datetime.timedelta(days = 1)
             last_week = datetime.date.today() - datetime.timedelta(days = 7)
             data = data.filter(date__range=[last_week, today])
 
