@@ -71,7 +71,7 @@ class Goal(BaseHabit):
         ordering = ['-created_at']
 
 class CheckMark(models.Model):
-    DATE_STATUS_CHOICES = [
+    STATUS_CHOICES = [
     ('UNDEFINED', 'undefined'),
     ('NOT_PLANNED', 'not planned'),
     ('DONE', 'done'),
@@ -80,7 +80,7 @@ class CheckMark(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     date = models.DateTimeField()
-    status = models.CharField(max_length=13, choices=DATE_STATUS_CHOICES, default='UNDEFINED')
+    status = models.CharField(max_length=13, choices=STATUS_CHOICES, default='UNDEFINED')
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE, related_name="checkmarks")
     
     class Meta:
@@ -89,12 +89,17 @@ class CheckMark(models.Model):
         ordering = ['-date']
 
 class Milestone(models.Model):
+    STATUS_CHOICES = [  
+    ('DONE', 'done'),
+    ('NOT_DONE', 'not done'),
+    ]
+    status = models.CharField(max_length=13, choices=STATUS_CHOICES, default='NOT_DONE')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length= 70)
     description = models.TextField(max_length=200, blank=True, null=True)
     date = models.DateTimeField()
-    habit = models.ForeignKey(Goal, on_delete=models.CASCADE)
+    habit = models.ForeignKey(Goal, on_delete=models.CASCADE, related_name="milestones")
 
     class Meta:
         verbose_name = 'Milestone'
