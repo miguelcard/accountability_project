@@ -5,7 +5,7 @@ from Models.users.models import User
 from Models.spaces.models import Space
 from django.db import models
 from model_utils.managers import InheritanceManager 
-from datetime import datetime
+from datetime import date, datetime
 
 # Tags for the habits
 class HabitTag(models.Model):
@@ -31,10 +31,13 @@ class BaseHabit(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     type = models.CharField(editable=False, max_length=11)
 
+    class Meta:
+        ordering = ['-created_at']
+
     def __str__(self):
         """Unicode representation of MODELNAME."""
         return f'{self.title}'
-
+    
 class RecurrentHabit(BaseHabit):
     TIME_FRAME_CHOICES = [
     ('W', 'Week'),
@@ -43,56 +46,63 @@ class RecurrentHabit(BaseHabit):
     # Here the user can set how many times per week/month to do the habit
     times = models.IntegerField()
     time_frame = models.CharField(max_length=1, choices=TIME_FRAME_CHOICES)  # Should these be made optional?
-    #type = models.CharField(default='recurrent', editable=False, max_length=11)
-
-    class Meta:
-        verbose_name = 'Recurrent Habit'
-        verbose_name_plural = 'Recurrent Habits'
     
     def save(self, *args, **kwargs):
         self.type = 'recurrent'
         super(BaseHabit, self).save(*args, **kwargs) 
-
-    # def save(self, force_insert: bool, force_update: bool, using: Optional[str], update_fields: Optional[Iterable[str]]) -> None:
-    #     return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
-        
+    
+    class Meta:
+        verbose_name = 'Recurrent Habit'
+        verbose_name_plural = 'Recurrent Habits'
+        ordering = ['-created_at']
 
 class Goal(BaseHabit):
 
     start_date = models.DateTimeField(default=datetime.now, blank=True, null=True)
     finish_date = models.DateTimeField(blank=True, null=True) # If not filled, write in front end it is recomended!
-    #type = models.CharField(default='goal', editable=False, max_length=11)
-
-    class Meta:
-        verbose_name = 'Goal'
-        verbose_name_plural = 'Goals'
 
     def save(self, *args, **kwargs):
         self.type = 'goal'
         super(BaseHabit, self).save(*args, **kwargs) 
 
+    class Meta:
+        verbose_name = 'Goal'
+        verbose_name_plural = 'Goals'
+        ordering = ['-created_at']
+
 class CheckMark(models.Model):
-    DATE_STATUS_CHOICES = [
+    STATUS_CHOICES = [
     ('UNDEFINED', 'undefined'),
     ('NOT_PLANNED', 'not planned'),
     ('DONE', 'done'),
     ('NOT_DONE', 'not done'),
     ]
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     date = models.DateTimeField()
-    satus = models.CharField(max_length=13, choices=DATE_STATUS_CHOICES, default='UNDEFINED')
-    habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
+    status = models.CharField(max_length=13, choices=STATUS_CHOICES, default='UNDEFINED')
+    habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE, related_name="checkmarks")
     
     class Meta:
         verbose_name = 'Check Mark'
         verbose_name_plural = 'Check Marks'
+        ordering = ['-date']
 
 class Milestone(models.Model):
+    STATUS_CHOICES = [  
+    ('DONE', 'done'),
+    ('NOT_DONE', 'not done'),
+    ]
+    status = models.CharField(max_length=13, choices=STATUS_CHOICES, default='NOT_DONE')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length= 70)
     description = models.TextField(max_length=200, blank=True, null=True)
     date = models.DateTimeField()
-    habit = models.ForeignKey(Goal, on_delete=models.CASCADE)
+    habit = models.ForeignKey(Goal, on_delete=models.CASCADE, related_name="milestones")
 
     class Meta:
         verbose_name = 'Milestone'
         verbose_name_plural = 'Milestones'
+        ordering = ['-date']
     

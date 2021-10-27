@@ -1,10 +1,11 @@
-from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite, HabitTagSerializer
-from Models.habits.models import BaseHabit, RecurrentHabit, Goal, HabitTag
-from rest_framework import generics, status
+from rest_framework.exceptions import NotFound
+from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite, HabitTagSerializer, CheckMarkNestedSerializer, MilestoneNestedSerializer
+from Models.habits.models import BaseHabit, RecurrentHabit, Goal, HabitTag, CheckMark, Milestone
+from rest_framework import generics, status, views
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPagination
+from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPagination, CheckmarksPagination
 
 """ ---------views for habits--------"""
 
@@ -120,11 +121,79 @@ class AllHabitsApiView(generics.GenericAPIView):
                 
             return self.get_paginated_response(response_data) if page is not None else Response(response_data)
 
-# Get view to show all existent tags for user to choose from
+""" ---------Get view to show all existent Tags for user to choose from-------"""
+# GET
 class GetAllHabitTagsApiView(generics.ListAPIView):
-    filter_backends = [OrderingFilter, SearchFilter]
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     ordering_fields = ['name']  
     search_fields = ['name'] 
     queryset = HabitTag.objects.all()
     serializer_class = HabitTagSerializer
     pagination_class = HabitTagsPagination
+
+""" ---------views for Checkmarks of a Habit -------"""
+# GET & POST, filterable by date in parameters
+class CheckmarksApiView(generics.ListCreateAPIView):
+    serializer_class = CheckMarkNestedSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_fields = ['status', 'date']
+    ordering_fields = ['status', 'date', 'created_at', 'updated_at']  
+    search_fields = ['id', 'date', 'status'] 
+
+    def get_queryset(self, *args, **kwargs): 
+        habit_id = self.kwargs.get("habit_pk")
+        try:
+            habit = BaseHabit.objects.get(id=habit_id)
+        except BaseHabit.DoesNotExist:
+            raise NotFound('A habit with this id does not exist')
+        return CheckMark.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user)
+
+# same class as above but with pagination
+class CheckmarksApiViewWithPagination(CheckmarksApiView):
+    pagination_class = CheckmarksPagination 
+
+# PUT, PATCH, DELETE & GET (detailed)
+class CheckmarksDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CheckMarkNestedSerializer
+
+    def get_queryset(self, *args, **kwargs): 
+        habit_id = self.kwargs.get("habit_pk")
+        try:
+            habit = BaseHabit.objects.get(id=habit_id)
+        except BaseHabit.DoesNotExist:
+            raise NotFound('A habit with this id does not exist')
+        return CheckMark.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user)
+
+""" ---------views for Milestones of a Goal -------"""
+
+# GET & POST
+class MilestonesApiView(generics.ListCreateAPIView):
+    serializer_class = MilestoneNestedSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_fields = ['name', 'date', 'status']
+    ordering_fields = ['name', 'status', 'date', 'created_at', 'updated_at']  
+    search_fields = ['name', 'description', 'id', 'date', 'status'] 
+
+    def get_queryset(self, *args, **kwargs): 
+        habit_id = self.kwargs.get("habit_pk")
+        try:
+            habit = Goal.objects.get(id=habit_id)
+        except Goal.DoesNotExist:
+            raise NotFound('A Goal with this id does not exist')
+        return Milestone.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user)
+
+# same class as above but with pagination
+class MilestonesApiViewWithPagination(MilestonesApiView):
+    pagination_class = CheckmarksPagination  
+
+# PUT, PATCH, DELETE & GET (detailed)
+class MilestonesDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = MilestoneNestedSerializer
+
+    def get_queryset(self, *args, **kwargs): 
+        habit_id = self.kwargs.get("habit_pk")
+        try:
+            habit = Goal.objects.get(id=habit_id)
+        except Goal.DoesNotExist:
+            raise NotFound('A Goal with this id does not exist')
+        return Milestone.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user)
