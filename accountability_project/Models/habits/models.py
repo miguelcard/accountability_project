@@ -57,7 +57,7 @@ class RecurrentHabit(BaseHabit):
 
 class Goal(BaseHabit):
 
-    start_date = models.DateField(default=datetime.datetime.now, blank=True, null=True)
+    start_date = models.DateField(default=datetime.date.today, blank=True, null=True)
     finish_date = models.DateField(blank=True, null=True) # If not filled, write in front end it is recomended!
 
     def save(self, *args, **kwargs):

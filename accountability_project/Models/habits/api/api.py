@@ -61,7 +61,7 @@ class GoalApiView(generics.ListCreateAPIView):
         if(self.request is not None and self.request.method == 'POST'):
             return GoalSerializerToWrite
         return GoalSerializerToRead
-    
+
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 

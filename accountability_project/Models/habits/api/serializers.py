@@ -56,7 +56,7 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
         )
     
     def to_representation(self, instance):
-        serializer = RecurrentHabitSerializerToRead(instance)
+        serializer = RecurrentHabitSerializerToRead(instance, context=self.context)
         return serializer.data
 
 class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
@@ -79,7 +79,7 @@ class GoalSerializerToWrite(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        serializer = GoalSerializerToRead(instance)
+        serializer = GoalSerializerToRead(instance, context=self.context)
         return serializer.data
 
 
