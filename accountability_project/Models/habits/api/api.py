@@ -47,7 +47,7 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 # GET & POST
 class GoalApiView(generics.ListCreateAPIView): 
-    pagination_class = AllHabitsPagination
+    pagination_class = AllHabitsPagination 
     serializer_class = GoalSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['title', 'start_date', 'finish_date', 'tags__name'] # Space (id), Milestone_name
@@ -65,6 +65,10 @@ class GoalApiView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+# same view as above but with pagination
+class GoalApiViewWithPagination(GoalApiView):
+    pagination_class = AllHabitsPagination
+    
 # PUT, PATCH, DELETE & GET (detailed)
 class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GoalSerializerToRead
@@ -79,6 +83,7 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 
 """ ---------view for both Recurrent Habits and Goals-------"""
+
 # GET & GET (detailed) 
 class AllHabitsApiView(generics.GenericAPIView): 
     pagination_class = AllHabitsPagination
@@ -122,6 +127,7 @@ class AllHabitsApiView(generics.GenericAPIView):
             return self.get_paginated_response(response_data) if page is not None else Response(response_data)
 
 """ ---------Get view to show all existent Tags for user to choose from-------"""
+
 # GET
 class GetAllHabitTagsApiView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -132,6 +138,7 @@ class GetAllHabitTagsApiView(generics.ListAPIView):
     pagination_class = HabitTagsPagination
 
 """ ---------views for Checkmarks of a Habit -------"""
+
 # GET & POST, filterable by date in parameters
 class CheckmarksApiView(generics.ListCreateAPIView):
     serializer_class = CheckMarkNestedSerializer

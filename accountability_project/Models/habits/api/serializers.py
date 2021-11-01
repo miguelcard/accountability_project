@@ -1,14 +1,14 @@
 from Models.habits.models import Goal, RecurrentHabit, HabitTag, BaseHabit, CheckMark, Milestone
 from rest_framework import serializers
 import datetime
-from rest_framework.exceptions import ParseError  
+from rest_framework.exceptions import ParseError
 
-# Filters the Checkmarks or Goals by Date, by default only the ones in the last 7 days are shown
+# Filters the Checkmarks or Milestones by Date, by default only the ones in the last 7 days are shown
 class FilteredListSerializer(serializers.ListSerializer):
 
     def to_representation(self, data):
-        date_from = self.context['request'].GET.get('date_from', None)
-        date_to = self.context['request'].GET.get('date_to', None)
+        date_from = self.context['request'].GET.get('from_date', None)
+        date_to = self.context['request'].GET.get('to_date', None)
 
         if isinstance(data, list):
             return super(FilteredListSerializer, self).to_representation(data)

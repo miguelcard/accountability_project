@@ -57,11 +57,24 @@ class RecurrentHabit(BaseHabit):
 
 class Goal(BaseHabit):
 
-    start_date = models.DateTimeField(default=datetime.datetime.now, blank=True, null=True)
-    finish_date = models.DateTimeField(blank=True, null=True) # If not filled, write in front end it is recomended!
+    start_date = models.DateField(default=datetime.datetime.now, blank=True, null=True)
+    finish_date = models.DateField(blank=True, null=True) # If not filled, write in front end it is recomended!
 
     def save(self, *args, **kwargs):
         self.type = 'goal'
+
+        # if self.finish_date != None and self.start_date != None and self.finish_date < self.start_date:
+        #     print("FINISH DATE SMALLER THAN START DATE")
+        # else:
+        #     print("finish date equal or bigger THAN START DATE")
+
+        # today = datetime.date.today()
+        # if self.date > today and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
+        #     raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates')
+        # same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=self.date) 
+        # if same_date_checkmarks.exists():
+        #     same_date_checkmarks.delete()
+
         super(BaseHabit, self).save(*args, **kwargs) 
 
     class Meta:
