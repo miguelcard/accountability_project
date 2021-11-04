@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPagination, CheckmarksPagination
+from django.shortcuts import get_object_or_404
+from utils.exceptionhandlers import BusinessLogicConflict
 
 """ ---------views for habits--------"""
 
@@ -98,13 +100,15 @@ class AllHabitsApiView(generics.GenericAPIView):
         # Get specific habit
         if pk:
             try:
-                habit = BaseHabit.objects.get(pk=pk)
+                habit = get_object_or_404(BaseHabit, owner=self.request.user, pk=pk)
                 if habit.type == 'recurrent':
-                    habit_specific = RecurrentHabit.objects.get(pk=pk)
+                    habit_specific = get_object_or_404(RecurrentHabit, owner=self.request.user, pk=pk)
                     habit_serializer = RecurrentHabitSerializerToRead(habit_specific, context=context)
-                else:
-                    habit_specific = Goal.objects.get(pk=pk)
+                elif habit.type == 'goal':
+                    habit_specific = get_object_or_404(Goal, owner=self.request.user, pk=pk)
                     habit_serializer = GoalSerializerToRead(habit_specific, context=context) 
+                else:
+                    raise BusinessLogicConflict(detail=('The habit with id: ',pk ,' does not have its Type set to either Recurrent or Goal'))
             except BaseHabit.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             return Response(habit_serializer.data)
@@ -149,10 +153,7 @@ class CheckmarksApiView(generics.ListCreateAPIView):
 
     def get_queryset(self, *args, **kwargs): 
         habit_id = self.kwargs.get("habit_pk")
-        try:
-            habit = BaseHabit.objects.get(id=habit_id)
-        except BaseHabit.DoesNotExist:
-            raise NotFound('A habit with this id does not exist')
+        habit = get_object_or_404(BaseHabit, id=habit_id, owner=self.request.user)
         return CheckMark.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user)
 
 # same class as above but with pagination
