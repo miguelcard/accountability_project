@@ -1,11 +1,10 @@
-from django.db.models.base import Model
-from django.db.models.fields import CharField
-from rest_framework.fields import ReadOnlyField
+from rest_framework import status
 from Models.users.models import User
 from Models.spaces.models import Space
 from django.db import models
 from model_utils.managers import InheritanceManager 
-from datetime import date, datetime
+import datetime
+from utils.exceptionhandlers import BusinessLogicConflict
 
 # Tags for the habits
 class HabitTag(models.Model):
@@ -58,11 +57,14 @@ class RecurrentHabit(BaseHabit):
 
 class Goal(BaseHabit):
 
-    start_date = models.DateTimeField(default=datetime.now, blank=True, null=True)
-    finish_date = models.DateTimeField(blank=True, null=True) # If not filled, write in front end it is recomended!
+    start_date = models.DateField(default=datetime.date.today, blank=True, null=True)
+    finish_date = models.DateField(blank=True, null=True) # If not filled, write in front end it is recomended!
 
     def save(self, *args, **kwargs):
         self.type = 'goal'
+        if self.finish_date != None and self.start_date != None and self.finish_date < self.start_date:
+            raise BusinessLogicConflict(detail='the finish_date must be greater than the start_date for a Goal')
+        
         super(BaseHabit, self).save(*args, **kwargs) 
 
     class Meta:
@@ -79,9 +81,19 @@ class CheckMark(models.Model):
     ]
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    date = models.DateTimeField()
+    date = models.DateField() #Default date should come from the front-end that knows the date and time of the client
     status = models.CharField(max_length=13, choices=STATUS_CHOICES, default='UNDEFINED')
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE, related_name="checkmarks")
+
+    def save(self, *args, **kwargs):
+        today = datetime.date.today()
+        if self.date > today and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
+            raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates')
+        
+        same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=self.date) 
+        if same_date_checkmarks.exists():
+            same_date_checkmarks.delete()
+        super(CheckMark, self).save(*args, **kwargs) 
     
     class Meta:
         verbose_name = 'Check Mark'
@@ -98,7 +110,7 @@ class Milestone(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length= 70)
     description = models.TextField(max_length=200, blank=True, null=True)
-    date = models.DateTimeField()
+    date = models.DateField()
     habit = models.ForeignKey(Goal, on_delete=models.CASCADE, related_name="milestones")
 
     class Meta:

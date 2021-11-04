@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPagination, CheckmarksPagination
+from django.shortcuts import get_object_or_404
+from utils.exceptionhandlers import BusinessLogicConflict
 
 """ ---------views for habits--------"""
 
@@ -47,7 +49,7 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 # GET & POST
 class GoalApiView(generics.ListCreateAPIView): 
-    pagination_class = AllHabitsPagination
+    pagination_class = AllHabitsPagination 
     serializer_class = GoalSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['title', 'start_date', 'finish_date', 'tags__name'] # Space (id), Milestone_name
@@ -61,10 +63,14 @@ class GoalApiView(generics.ListCreateAPIView):
         if(self.request is not None and self.request.method == 'POST'):
             return GoalSerializerToWrite
         return GoalSerializerToRead
-    
+
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+# same view as above but with pagination
+class GoalApiViewWithPagination(GoalApiView):
+    pagination_class = AllHabitsPagination
+    
 # PUT, PATCH, DELETE & GET (detailed)
 class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GoalSerializerToRead
@@ -79,6 +85,7 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 
 """ ---------view for both Recurrent Habits and Goals-------"""
+
 # GET & GET (detailed) 
 class AllHabitsApiView(generics.GenericAPIView): 
     pagination_class = AllHabitsPagination
@@ -93,13 +100,15 @@ class AllHabitsApiView(generics.GenericAPIView):
         # Get specific habit
         if pk:
             try:
-                habit = BaseHabit.objects.get(pk=pk)
+                habit = get_object_or_404(BaseHabit, owner=self.request.user, pk=pk)
                 if habit.type == 'recurrent':
-                    habit_specific = RecurrentHabit.objects.get(pk=pk)
+                    habit_specific = get_object_or_404(RecurrentHabit, owner=self.request.user, pk=pk)
                     habit_serializer = RecurrentHabitSerializerToRead(habit_specific, context=context)
-                else:
-                    habit_specific = Goal.objects.get(pk=pk)
+                elif habit.type == 'goal':
+                    habit_specific = get_object_or_404(Goal, owner=self.request.user, pk=pk)
                     habit_serializer = GoalSerializerToRead(habit_specific, context=context) 
+                else:
+                    raise BusinessLogicConflict(detail=('The habit with id: ',pk ,' does not have its Type set to either Recurrent or Goal'))
             except BaseHabit.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             return Response(habit_serializer.data)
@@ -122,6 +131,7 @@ class AllHabitsApiView(generics.GenericAPIView):
             return self.get_paginated_response(response_data) if page is not None else Response(response_data)
 
 """ ---------Get view to show all existent Tags for user to choose from-------"""
+
 # GET
 class GetAllHabitTagsApiView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -132,6 +142,7 @@ class GetAllHabitTagsApiView(generics.ListAPIView):
     pagination_class = HabitTagsPagination
 
 """ ---------views for Checkmarks of a Habit -------"""
+
 # GET & POST, filterable by date in parameters
 class CheckmarksApiView(generics.ListCreateAPIView):
     serializer_class = CheckMarkNestedSerializer
@@ -142,10 +153,7 @@ class CheckmarksApiView(generics.ListCreateAPIView):
 
     def get_queryset(self, *args, **kwargs): 
         habit_id = self.kwargs.get("habit_pk")
-        try:
-            habit = BaseHabit.objects.get(id=habit_id)
-        except BaseHabit.DoesNotExist:
-            raise NotFound('A habit with this id does not exist')
+        habit = get_object_or_404(BaseHabit, id=habit_id, owner=self.request.user)
         return CheckMark.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user)
 
 # same class as above but with pagination

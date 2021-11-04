@@ -3,12 +3,12 @@ from rest_framework import serializers
 import datetime
 from rest_framework.exceptions import ParseError
 
-# Filters the Checkmarks or Goals by Date, by default only the ones in the last 7 days are shown
+# Filters the Checkmarks or Milestones by Date, by default only the ones in the last 7 days are shown
 class FilteredListSerializer(serializers.ListSerializer):
 
     def to_representation(self, data):
-        date_from = self.context['request'].GET.get('date_from', None)
-        date_to = self.context['request'].GET.get('date_to', None)
+        date_from = self.context['request'].GET.get('from_date', None)
+        date_to = self.context['request'].GET.get('to_date', None)
 
         if isinstance(data, list):
             return super(FilteredListSerializer, self).to_representation(data)
@@ -56,7 +56,7 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
         )
     
     def to_representation(self, instance):
-        serializer = RecurrentHabitSerializerToRead(instance)
+        serializer = RecurrentHabitSerializerToRead(instance, context=self.context)
         return serializer.data
 
 class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
@@ -79,7 +79,7 @@ class GoalSerializerToWrite(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        serializer = GoalSerializerToRead(instance)
+        serializer = GoalSerializerToRead(instance, context=self.context)
         return serializer.data
 
 
