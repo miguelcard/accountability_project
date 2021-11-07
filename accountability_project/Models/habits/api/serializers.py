@@ -7,8 +7,8 @@ from rest_framework.exceptions import ParseError
 class FilteredListSerializer(serializers.ListSerializer):
 
     def to_representation(self, data):
-        date_from = self.context['request'].GET.get('from_date', None)
-        date_to = self.context['request'].GET.get('to_date', None)
+        date_from = self.context['request'].GET.get('cm_from_date', None)
+        date_to = self.context['request'].GET.get('cm_to_date', None)
 
         if isinstance(data, list):
             return super(FilteredListSerializer, self).to_representation(data)
