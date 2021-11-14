@@ -102,6 +102,14 @@ class UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer(serializers.ModelS
             "age",
         )
 
-class GetAuthenticatedUserSerializer(UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer):
+class GetAuthenticatedUserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
     tags = TagSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
+    age = serializers.SerializerMethodField(method_name='get_age')
+    
+    class Meta:
+        model = User
+        exclude = ("password",) 
+        read_only_fields = (
+            "age",
+        )
