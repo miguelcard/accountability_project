@@ -155,7 +155,7 @@ REST_FRAMEWORK = {
     # Default authentication for all views 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # 'rest_framework.authentication.BasicAuthentication',
-        # 'rest_framework.authentication.SessionAuthentication',
+        #  'rest_framework.authentication.SessionAuthentication',
         'knox.auth.TokenAuthentication',
     ],
     # Schema for API Documentation
@@ -170,7 +170,7 @@ REST_FRAMEWORK = {
 
 # Knox Tokens Settings 
 REST_KNOX = {
-  'TOKEN_TTL': timedelta(hours=72),
+  'TOKEN_TTL': timedelta(hours=168),
   'AUTO_REFRESH': True,
 }
 

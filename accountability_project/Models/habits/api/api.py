@@ -7,6 +7,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPagination, CheckmarksPagination
 from django.shortcuts import get_object_or_404
+from Models.habits.api.permissions import IsOwnerOfParentHabit
 from utils.exceptionhandlers import BusinessLogicConflict
 
 """ ---------views for habits--------"""
@@ -145,6 +146,7 @@ class GetAllHabitTagsApiView(generics.ListAPIView):
 
 # GET & POST, filterable by date in parameters
 class CheckmarksApiView(generics.ListCreateAPIView):
+    permission_classes = [IsOwnerOfParentHabit]
     serializer_class = CheckMarkNestedSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['status', 'date']
@@ -162,6 +164,7 @@ class CheckmarksApiViewWithPagination(CheckmarksApiView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class CheckmarksDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsOwnerOfParentHabit]
     serializer_class = CheckMarkNestedSerializer
 
     def get_queryset(self, *args, **kwargs): 
@@ -176,6 +179,7 @@ class CheckmarksDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 # GET & POST
 class MilestonesApiView(generics.ListCreateAPIView):
+    permission_classes = [IsOwnerOfParentHabit]
     serializer_class = MilestoneNestedSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['name', 'date', 'status']
@@ -196,6 +200,7 @@ class MilestonesApiViewWithPagination(MilestonesApiView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class MilestonesDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsOwnerOfParentHabit]
     serializer_class = MilestoneNestedSerializer
 
     def get_queryset(self, *args, **kwargs): 
