@@ -1,4 +1,4 @@
-from Models.habits.api.api import (RecurrentHabitApiView, RecurrentHabitDetailApiView, GoalApiView, GoalApiViewWithPagination,
+from Models.habits.api.api import (RecurrentHabitApiView, RecurrentHabitDetailApiView, GoalApiView,
  GoalDetailApiView, AllHabitsApiView, GetAllHabitTagsApiView, CheckmarksDetailApiView, CheckmarksApiView, CheckmarksApiViewWithPagination, 
  MilestonesApiView, MilestonesApiViewWithPagination, MilestonesDetailApiView)
 from django.urls import path

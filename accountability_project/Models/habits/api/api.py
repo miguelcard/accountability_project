@@ -68,10 +68,6 @@ class GoalApiView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-# same view as above but with pagination
-class GoalApiViewWithPagination(GoalApiView):
-    pagination_class = AllHabitsPagination
-    
 # PUT, PATCH, DELETE & GET (detailed)
 class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GoalSerializerToRead
