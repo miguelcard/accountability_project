@@ -19,18 +19,3 @@ class IsOwnerOfParentHabit(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return (obj.habit.owner == request.user)
-
-# Example: 
-# class NameOfPermission(BasePermission):
-    
-#     message = 'You must be the owner of this object'
-
-#     def has_permission(self, request, view):     
-#         # no object specific checking       # A more generic permission (not per object)
-#         pass
-    
-#     def has_object_permission(self, request, view, obj):
-#         my_safe_methods = ['PUT']
-#         if request.method in my_safe_methods:
-#             return True
-#         return obj.user == request.user

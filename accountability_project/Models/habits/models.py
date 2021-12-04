@@ -6,24 +6,15 @@ from model_utils.managers import InheritanceManager
 import datetime
 from utils.exceptionhandlers import BusinessLogicConflict
 
-# Tags for the habits
-class HabitTag(models.Model):
-    name = models.CharField(max_length=50, unique=True, blank=True, null=True)
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Habit Tag'
-        verbose_name_plural = 'Habit Tags'
 
 # This Habit is an abstraction and the real implementation should be done either by recurrent habit or goal
 class BaseHabit(models.Model):
-    """Model definition for MODELNAME."""
-    objects = InheritanceManager()
 
+    """ Abstract habit model extended by Goal and RecurrentHabit"""
+    objects = InheritanceManager()
     owner = models.ForeignKey(User, on_delete=models.CASCADE) 
-    tags = models.ManyToManyField(HabitTag, blank=True) 
-    space = models.ManyToManyField(Space, blank=True)
+    tags = models.ManyToManyField('HabitTag', blank=True) 
+    spaces = models.ManyToManyField(Space, related_name='space_habits', blank=True)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -31,13 +22,17 @@ class BaseHabit(models.Model):
     type = models.CharField(editable=False, max_length=11)
 
     class Meta:
+        verbose_name = 'Base Habit'
+        verbose_name_plural = 'Base Habits'
         ordering = ['-created_at']
+        db_table = 'base_habit'
 
     def __str__(self):
         """Unicode representation of MODELNAME."""
         return f'{self.title}'
     
 class RecurrentHabit(BaseHabit):
+
     TIME_FRAME_CHOICES = [
     ('W', 'Week'),
     ('M', 'Month'),
@@ -54,6 +49,7 @@ class RecurrentHabit(BaseHabit):
         verbose_name = 'Recurrent Habit'
         verbose_name_plural = 'Recurrent Habits'
         ordering = ['-created_at']
+        db_table = 'recurrent_habit'
 
 class Goal(BaseHabit):
 
@@ -71,8 +67,10 @@ class Goal(BaseHabit):
         verbose_name = 'Goal'
         verbose_name_plural = 'Goals'
         ordering = ['-created_at']
+        db_table = 'goal'
 
 class CheckMark(models.Model):
+
     STATUS_CHOICES = [
     ('UNDEFINED', 'undefined'),
     ('NOT_PLANNED', 'not planned'),
@@ -85,11 +83,11 @@ class CheckMark(models.Model):
     status = models.CharField(max_length=13, choices=STATUS_CHOICES, default='UNDEFINED')
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE, related_name="checkmarks")
 
+    # Allow only one checkmark per day, i.e. delete any otheres that exist on the same day
     def save(self, *args, **kwargs):
         today = datetime.date.today()
         if self.date > today and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
-            raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates')
-        
+            raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates') # Should it be enabled?
         same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=self.date) 
         if same_date_checkmarks.exists():
             same_date_checkmarks.delete()
@@ -99,8 +97,10 @@ class CheckMark(models.Model):
         verbose_name = 'Check Mark'
         verbose_name_plural = 'Check Marks'
         ordering = ['-date']
+        db_table = 'checkmark'
 
 class Milestone(models.Model):
+
     STATUS_CHOICES = [  
     ('DONE', 'done'),
     ('NOT_DONE', 'not done'),
@@ -117,4 +117,16 @@ class Milestone(models.Model):
         verbose_name = 'Milestone'
         verbose_name_plural = 'Milestones'
         ordering = ['-date']
+        db_table = 'milestone'
     
+# Tags for the habits
+class HabitTag(models.Model):
+    name = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Habit Tag'
+        verbose_name_plural = 'Habit Tags'
+        ordering = ['name']
+        db_table = 'habit_tag'

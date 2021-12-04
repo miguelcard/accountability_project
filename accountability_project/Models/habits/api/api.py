@@ -49,9 +49,9 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 """ ---------views for Goals-------"""
 
 # GET & POST
-class GoalApiView(generics.ListCreateAPIView): 
-    pagination_class = AllHabitsPagination 
+class GoalApiView(generics.ListCreateAPIView):
     serializer_class = GoalSerializerToRead
+    pagination_class = AllHabitsPagination 
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['title', 'start_date', 'finish_date', 'tags__name'] # Space (id), Milestone_name
     ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'start_date', 'finish_date', 'tags__name']  
