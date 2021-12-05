@@ -19,9 +19,9 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
     pagination_class = AllHabitsPagination
     serializer_class = RecurrentHabitSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filter_fields = ['title', 'time_frame', 'times', 'tags__name'] # Space (id), 
+    filter_fields = ['title', 'time_frame', 'times', 'tags__name', 'spaces__name', 'spaces__id'] 
     ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'time_frame', 'times', 'tags__name']  
-    search_fields = ['title', 'description', 'time_frame', 'times', 'tags__name'] # Space
+    search_fields = ['title', 'description', 'time_frame', 'times', 'tags__name', 'spaces__name'] 
 
     def get_queryset(self):
         return RecurrentHabit.objects.filter(owner=self.request.user)
@@ -53,9 +53,9 @@ class GoalApiView(generics.ListCreateAPIView):
     serializer_class = GoalSerializerToRead
     pagination_class = AllHabitsPagination 
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filter_fields = ['title', 'start_date', 'finish_date', 'tags__name'] # Space (id), Milestone_name
+    filter_fields = ['title', 'start_date', 'finish_date', 'tags__name', 'spaces__name', 'spaces__id', 'milestones__name'] 
     ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'start_date', 'finish_date', 'tags__name']  
-    search_fields = ['title', 'description', 'start_date', 'finish_date', 'tags__name'] # Space, Milestone_name
+    search_fields = ['title', 'description', 'start_date', 'finish_date', 'tags__name', 'spaces__name', 'milestones__name'] 
 
     def get_queryset(self):
         return Goal.objects.filter(owner=self.request.user)
