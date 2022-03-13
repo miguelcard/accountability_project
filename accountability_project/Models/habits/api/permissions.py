@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 from Models.habits.models import BaseHabit
-from Models.habits.models import CheckMark
+from Models.spaces.models import SpaceRole
 
 # Note: has_permission is called on all HTTP requests whereas, has_object_permission is called only for detail methods (GET, PUT, PATCH) so it can be that both are called
         
@@ -19,3 +19,27 @@ class IsOwnerOfParentHabit(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return (obj.habit.owner == request.user)
+
+class UserBelongsToHabitSpaces(BasePermission):
+
+    message = 'You are trying to link the habit to a Space where you do not belong / are not a member '
+
+    def has_object_permission(self, request, view, obj):
+
+        # habit_serializer_spaces are the habits listed in the JSON request body
+        habit_serializer = view.get_serializer(data=request.data)
+        habit_serializer.is_valid(raise_exception=True)
+        habit_serializer_spaces = habit_serializer.validated_data['spaces']
+
+        print('Spaces sent in the request')
+        for space in habit_serializer_spaces:
+            print('SPACE: ',space)
+            print('Space ID: ', space.id)
+
+        # getting the spaces where the user is a member:
+        user_spaces = request.user.user_spaces.all()
+
+        for habit_space in habit_serializer_spaces:
+            if habit_space not in user_spaces:
+                return False
+        return True

@@ -38,9 +38,9 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserGetAgeSerializer():
-    def get_age(self, instance):
+    def get_age(self, obj):
         today = date.today()
-        born = instance.birthdate
+        born = obj.birthdate
         if born is None:
             return None
         rest = 1 if (today.month, today.day) < (born.month, born.day) else 0

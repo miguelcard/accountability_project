@@ -7,7 +7,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPagination, CheckmarksPagination
 from django.shortcuts import get_object_or_404
-from Models.habits.api.permissions import IsOwnerOfParentHabit
+from Models.habits.api.permissions import IsOwnerOfParentHabit, UserBelongsToHabitSpaces
 from utils.exceptionhandlers import BusinessLogicConflict
 
 """ ---------views for habits--------"""
@@ -36,6 +36,7 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [UserBelongsToHabitSpaces]
     serializer_class = RecurrentHabitSerializerToWrite
 
     def get_queryset(self):
@@ -70,6 +71,7 @@ class GoalApiView(generics.ListCreateAPIView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [UserBelongsToHabitSpaces]
     serializer_class = GoalSerializerToRead
 
     def get_queryset(self):
@@ -87,9 +89,9 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 class AllHabitsApiView(generics.GenericAPIView): 
     pagination_class = AllHabitsPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filter_fields = ['type', 'title', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name'] # Space (id),
-    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name']
-    search_fields = ['title', 'description', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'tags__name'] # Space
+    filter_fields = ['type', 'title', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name', 'owner__id', 'owner__username', 'spaces__name', 'spaces__id'] 
+    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name', 'owner__id', 'owner__username']
+    search_fields = ['title', 'description', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'tags__name', 'owner__username', 'spaces__name'] 
     
     def get(self, request, *args, **kwargs):
         context = {"request": request,}
@@ -105,10 +107,11 @@ class AllHabitsApiView(generics.GenericAPIView):
                     habit_specific = get_object_or_404(Goal, owner=self.request.user, pk=pk)
                     habit_serializer = GoalSerializerToRead(habit_specific, context=context) 
                 else:
-                    raise BusinessLogicConflict(detail=('The habit with id: ',pk ,' does not have its Type set to either Recurrent or Goal'))
+                    raise BusinessLogicConflict(detail=('The habit with id: ', pk,' does not have its Type set to either Recurrent or Goal'))
             except BaseHabit.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             return Response(habit_serializer.data)
+        
         # Get all habits
         else: 
             # All Habits queryset

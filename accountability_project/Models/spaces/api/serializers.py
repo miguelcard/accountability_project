@@ -3,8 +3,13 @@ from django.db.models import fields
 from rest_framework import serializers
 from Models.spaces.models import Space, SpaceRole
 from Models.habits.api.serializers import HabitTagSerializer
+from Models.habits.models import BaseHabit, RecurrentHabit
+from Models.habits.api.serializers import GoalSerializerToRead, RecurrentHabitSerializerToRead
 
 class SpaceSerializer(serializers.ModelSerializer):
+    
+    space_habits = serializers.PrimaryKeyRelatedField(queryset=BaseHabit.objects.all(), many=True, allow_null=True, required=False)
+
     class Meta:
         model = Space
         fields = '__all__'
@@ -19,21 +24,43 @@ class SpaceSerializer(serializers.ModelSerializer):
 
 class SpaceSerializerToRead(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
-    # members size
-    size = serializers.IntegerField(read_only=True)
-    # size = serializers.SerializerMethodField(method_name='get_size')
+    members_count = serializers.IntegerField(read_only=True)
+    habits_count = serializers.IntegerField(read_only=True)
+    space_habits = serializers.PrimaryKeyRelatedField(read_only=True, many=True) # possibly create a nested serializer for this one
     
     class Meta:
         model = Space
         fields = '__all__'
         read_only_fields = (
             'creator',
-            # 'size',
         )
+
+class SpaceSerializerToReadWithHabits(serializers.ModelSerializer):
+    tags = HabitTagSerializer(many=True, read_only=True)
+    members_count = serializers.IntegerField(read_only=True)
+    habits_count = serializers.IntegerField(read_only=True)
+    # shows the detailed habits that belong to this space 
+    space_habits = serializers.SerializerMethodField(method_name='get_space_habits')
+
+    class Meta:
+        model = Space
+        fields = '__all__'
+        read_only_fields = (
+            'creator',
+            'space_habits'
+        )
+    
+    def get_space_habits(self, obj):
+        habits = obj.space_habits.all().select_subclasses() 
+        response_data = []
+        for habit in habits:
+            if habit.type == 'recurrent':
+                specific_serializer = RecurrentHabitSerializerToRead(habit, context=self.context)
+            else:
+                specific_serializer = GoalSerializerToRead(habit, context=self.context)
+            response_data.append(specific_serializer.data) 
         
-    # def get_size(self, instance):
-    #     member_size = instance.members.count()
-    #     return member_size
+        return response_data
 
 class SpaceRoleSerializer(serializers.ModelSerializer):
     class Meta:

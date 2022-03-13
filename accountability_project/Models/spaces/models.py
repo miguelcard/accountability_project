@@ -13,7 +13,7 @@ class Space(models.Model):
     members = models.ManyToManyField(User, related_name='user_spaces', through='SpaceRole')
     
     def __str__(self):
-        return self.name
+        return f'[{self.id}] {self.name}'
 
     class Meta:
         verbose_name = 'Space'
