@@ -1,12 +1,12 @@
 from django.http import request
 from rest_framework.permissions import IsAdminUser
 from Models.users.models import User, Tag, Language
-from Models.users.api.serializers import UserSerializer, UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer
+from Models.users.api.serializers import UserSerializer, UserUpdatedFieldsWithoutPasswordSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer
 from rest_framework import status, generics, mixins 
 from rest_framework.response import Response
 
 class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer 
+    serializer_class = UserUpdatedFieldsWithoutPasswordSerializer 
 
     def get_object(self):
         return self.request.user
@@ -18,7 +18,7 @@ class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'PUT'):
-            return UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer
+            return UserUpdatedFieldsWithoutPasswordSerializer
         return GetAuthenticatedUserSerializer
 
 class GetAllUserTagsApiView(generics.ListAPIView):
@@ -51,5 +51,5 @@ class UserGenericApiView(generics.GenericAPIView,
 
     def get_serializer_class(self):
         if(request.method == 'PUT'):
-            return UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer
+            return UserUpdatedFieldsWithoutPasswordSerializer
         return UserSerializer 

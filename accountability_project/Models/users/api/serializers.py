@@ -38,9 +38,9 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserGetAgeSerializer():
-    def get_age(self, instance):
+    def get_age(self, obj):
         today = date.today()
-        born = instance.birthdate
+        born = obj.birthdate
         if born is None:
             return None
         rest = 1 if (today.month, today.day) < (born.month, born.day) else 0
@@ -67,7 +67,10 @@ class UserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
             "languages",
             "about",
             "is_active", 
-            "is_superuser"
+            "is_superuser",
+            "is_staff",
+            "created_at",
+            "updated_at"
         )
         read_only_fields = (
             "tags",
@@ -91,15 +94,15 @@ class UserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
         update_user.save()
         return update_user
 
-class UserUpdatedFieldsWithoutPasswordUsernameEmailSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
+class UserUpdatedFieldsWithoutPasswordSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
 
     age = serializers.SerializerMethodField(method_name='get_age')
     
     class Meta:
         model = User
-        exclude = ("password", "username","email", "is_active","is_staff" , "is_superuser",) 
+        exclude = ('password',) 
         read_only_fields = (
-            "age",
+            'age',
         )
 
 class GetAuthenticatedUserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):

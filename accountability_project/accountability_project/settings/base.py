@@ -155,7 +155,7 @@ REST_FRAMEWORK = {
     # Default authentication for all views 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # 'rest_framework.authentication.BasicAuthentication',
-        #  'rest_framework.authentication.SessionAuthentication',
+        #  'rest_framework.authentication.SessionAuthentication', # Uncomment this one
         'knox.auth.TokenAuthentication',
     ],
     # Schema for API Documentation
