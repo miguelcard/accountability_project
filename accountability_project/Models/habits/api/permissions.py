@@ -31,11 +31,6 @@ class UserBelongsToHabitSpaces(BasePermission):
         habit_serializer.is_valid(raise_exception=True)
         habit_serializer_spaces = habit_serializer.validated_data['spaces']
 
-        print('Spaces sent in the request')
-        for space in habit_serializer_spaces:
-            print('SPACE: ',space)
-            print('Space ID: ', space.id)
-
         # getting the spaces where the user is a member:
         user_spaces = request.user.user_spaces.all()
 
