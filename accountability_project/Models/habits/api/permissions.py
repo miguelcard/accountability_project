@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 from Models.habits.models import BaseHabit
 from Models.spaces.models import SpaceRole
 
@@ -20,11 +20,24 @@ class IsOwnerOfParentHabit(BasePermission):
     def has_object_permission(self, request, view, obj):
         return (obj.habit.owner == request.user)
 
+
 class UserBelongsToHabitSpaces(BasePermission):
 
     message = 'You are trying to link the habit to a Space where you do not belong / are not a member '
 
+    # For POST
+    def has_permission(self, request, view):
+        return self.check_user_belongs_to_space_sent_in_habit_serializer(request, view)
+        
+    # For GET, PUT, PATCH
     def has_object_permission(self, request, view, obj):
+        return self.check_user_belongs_to_space_sent_in_habit_serializer(request, view)
+
+
+    def check_user_belongs_to_space_sent_in_habit_serializer(self, request, view):
+
+        if request.method in SAFE_METHODS:
+            return True
 
         # habit_serializer_spaces are the habits listed in the JSON request body
         habit_serializer = view.get_serializer(data=request.data)
