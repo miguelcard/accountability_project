@@ -15,7 +15,8 @@ from utils.exceptionhandlers import BusinessLogicConflict
 """ ---------views for recurrent habits-------"""
 
 # GET & POST
-class RecurrentHabitApiView(generics.ListCreateAPIView): 
+class RecurrentHabitApiView(generics.ListCreateAPIView):
+    permission_classes = [UserBelongsToHabitSpaces]
     pagination_class = AllHabitsPagination
     serializer_class = RecurrentHabitSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -51,6 +52,7 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 # GET & POST
 class GoalApiView(generics.ListCreateAPIView):
+    permission_classes = [UserBelongsToHabitSpaces]
     serializer_class = GoalSerializerToRead
     pagination_class = AllHabitsPagination 
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
