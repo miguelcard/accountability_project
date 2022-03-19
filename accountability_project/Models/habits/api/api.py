@@ -9,6 +9,7 @@ from Models.habits.api.pagination import AllHabitsPagination, HabitTagsPaginatio
 from django.shortcuts import get_object_or_404
 from Models.habits.api.permissions import IsOwnerOfParentHabit, UserBelongsToHabitSpaces
 from utils.exceptionhandlers import BusinessLogicConflict
+from rest_framework.permissions import IsAuthenticated
 
 """ ---------views for habits--------"""
 
@@ -16,7 +17,7 @@ from utils.exceptionhandlers import BusinessLogicConflict
 
 # GET & POST
 class RecurrentHabitApiView(generics.ListCreateAPIView):
-    permission_classes = [UserBelongsToHabitSpaces]
+    permission_classes = [IsAuthenticated, UserBelongsToHabitSpaces]
     pagination_class = AllHabitsPagination
     serializer_class = RecurrentHabitSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -25,7 +26,7 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
     search_fields = ['title', 'description', 'time_frame', 'times', 'tags__name', 'spaces__name'] 
 
     def get_queryset(self):
-        return RecurrentHabit.objects.filter(owner=self.request.user)
+        return RecurrentHabit.objects.filter(owner=self.request.user.id)
 
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'POST'):
@@ -37,11 +38,11 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [UserBelongsToHabitSpaces]
+    permission_classes = [IsAuthenticated, UserBelongsToHabitSpaces]
     serializer_class = RecurrentHabitSerializerToWrite
 
     def get_queryset(self):
-        return RecurrentHabit.objects.filter(owner=self.request.user)
+        return RecurrentHabit.objects.filter(owner=self.request.user.id)
 
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'GET'):
@@ -52,7 +53,7 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
 
 # GET & POST
 class GoalApiView(generics.ListCreateAPIView):
-    permission_classes = [UserBelongsToHabitSpaces]
+    permission_classes = [IsAuthenticated, UserBelongsToHabitSpaces]
     serializer_class = GoalSerializerToRead
     pagination_class = AllHabitsPagination 
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -61,7 +62,7 @@ class GoalApiView(generics.ListCreateAPIView):
     search_fields = ['title', 'description', 'start_date', 'finish_date', 'tags__name', 'spaces__name', 'milestones__name'] 
 
     def get_queryset(self):
-        return Goal.objects.filter(owner=self.request.user)
+        return Goal.objects.filter(owner=self.request.user.id)
 
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'POST'):
@@ -73,11 +74,11 @@ class GoalApiView(generics.ListCreateAPIView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [UserBelongsToHabitSpaces]
+    permission_classes = [IsAuthenticated, UserBelongsToHabitSpaces]
     serializer_class = GoalSerializerToRead
 
     def get_queryset(self):
-        return Goal.objects.filter(owner=self.request.user)
+        return Goal.objects.filter(owner=self.request.user.id)
 
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'GET'):
@@ -147,7 +148,7 @@ class GetAllHabitTagsApiView(generics.ListAPIView):
 
 # GET & POST, filterable by date in parameters
 class CheckmarksApiView(generics.ListCreateAPIView):
-    permission_classes = [IsOwnerOfParentHabit]
+    permission_classes = [IsAuthenticated, IsOwnerOfParentHabit]
     serializer_class = CheckMarkNestedSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['status', 'date']
@@ -165,7 +166,7 @@ class CheckmarksApiViewWithPagination(CheckmarksApiView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class CheckmarksDetailApiView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsOwnerOfParentHabit]
+    permission_classes = [IsAuthenticated, IsOwnerOfParentHabit]
     serializer_class = CheckMarkNestedSerializer
 
     def get_queryset(self, *args, **kwargs): 
@@ -174,13 +175,13 @@ class CheckmarksDetailApiView(generics.RetrieveUpdateDestroyAPIView):
             habit = BaseHabit.objects.get(id=habit_id)
         except BaseHabit.DoesNotExist:
             raise NotFound('A habit with this id does not exist')
-        return CheckMark.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user)
+        return CheckMark.objects.all().select_related('habit').filter(habit=habit, habit__owner=self.request.user.id)
 
 """ ---------views for Milestones of a Goal -------"""
 
 # GET & POST
 class MilestonesApiView(generics.ListCreateAPIView):
-    permission_classes = [IsOwnerOfParentHabit]
+    permission_classes = [IsAuthenticated, IsOwnerOfParentHabit]
     serializer_class = MilestoneNestedSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['name', 'date', 'status']
@@ -201,7 +202,7 @@ class MilestonesApiViewWithPagination(MilestonesApiView):
 
 # PUT, PATCH, DELETE & GET (detailed)
 class MilestonesDetailApiView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsOwnerOfParentHabit]
+    permission_classes = [IsAuthenticated, IsOwnerOfParentHabit]
     serializer_class = MilestoneNestedSerializer
 
     def get_queryset(self, *args, **kwargs): 

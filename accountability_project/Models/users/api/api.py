@@ -4,6 +4,7 @@ from Models.users.models import User, Tag, Language
 from Models.users.api.serializers import UserSerializer, UserUpdatedFieldsWithoutPasswordSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer
 from rest_framework import status, generics, mixins 
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserUpdatedFieldsWithoutPasswordSerializer 
@@ -38,7 +39,7 @@ class UserGenericApiView(generics.GenericAPIView,
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request, pk=None):
         if pk:

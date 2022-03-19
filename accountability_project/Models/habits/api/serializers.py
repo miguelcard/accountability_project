@@ -82,13 +82,6 @@ class GoalSerializerToWrite(serializers.ModelSerializer):
         serializer = GoalSerializerToRead(instance, context=self.context)
         return serializer.data
 
-    # TO DELETE
-    # def create(self, validated_data):
-    #     spaces_data = validated_data.pop('spaces')
-    #     # chack spaces data with self.context request user ...
-    #     # return what if not allowed? 
-    #     return super().create(validated_data)
-
 class GoalSerializerToRead(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
     checkmarks = CheckMarkNestedSerializer(many=True, read_only=True)
