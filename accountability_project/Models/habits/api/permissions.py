@@ -12,7 +12,7 @@ class IsOwnerOfParentHabit(BasePermission):
     def has_permission(self, request, view):
         habit_id = view.kwargs.get("habit_pk")
         try:
-            BaseHabit.objects.get(id=habit_id, owner=view.request.user)
+            BaseHabit.objects.get(id=habit_id, owner=view.request.user.id)
             return True
         except BaseHabit.DoesNotExist:
             return False

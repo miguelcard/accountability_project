@@ -50,7 +50,7 @@ class SpacesDetailApiView(generics.RetrieveUpdateAPIView, SpacesDetailRetrieveWi
     """
     Retrieves an specific Space if the user is the creator or a member of it, serializer shows a simple representation of the space
     """
-    # permission_classes = [IsSpaceAdminOrReadOnly] # We will let all members edit things like the title and description of the space
+    # permission_classes = [IsAuthenticated, IsSpaceAdminOrReadOnly] # We will let all members edit things like the title and description of the space
     serializer_class = SpaceSerializer 
 
 # GET
