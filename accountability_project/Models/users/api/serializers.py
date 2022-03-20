@@ -94,6 +94,7 @@ class UserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
         update_user.save()
         return update_user
 
+
 class UserUpdatedFieldsWithoutPasswordSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
 
     age = serializers.SerializerMethodField(method_name='get_age')
@@ -109,6 +110,8 @@ class GetAuthenticatedUserSerializer(serializers.ModelSerializer, UserGetAgeSeri
     tags = TagSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     age = serializers.SerializerMethodField(method_name='get_age')
+    user_spaces = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
+    owned_spaces = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
     
     class Meta:
         model = User
