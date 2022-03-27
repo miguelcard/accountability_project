@@ -12,7 +12,7 @@ class BaseHabit(models.Model):
 
     """ Abstract habit model extended by Goal and RecurrentHabit"""
     objects = InheritanceManager()
-    owner = models.ForeignKey(User, on_delete=models.CASCADE) 
+    owner = models.ForeignKey(User, related_name='habits', on_delete=models.CASCADE) 
     tags = models.ManyToManyField('HabitTag', blank=True) 
     spaces = models.ManyToManyField(Space, related_name='space_habits', blank=True)
     title = models.CharField(max_length=100)
