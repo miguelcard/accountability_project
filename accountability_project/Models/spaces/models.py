@@ -32,10 +32,10 @@ class SpaceRole(models.Model):
     space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='spaceroles')
     # here interesting fields can be added on how users are invited to groups
     # date_joined = models.DateField()
-    # invite_reason = models.CharField(max_length=64)
+    # invite_reason ... way = models.CharField(max_length=64)
     
     def __str__(self):
-        return self.role + ' - '+ self.member.username + ' - '+ self.space.name + ' ['+ str(self.space.id) +']'
+        return self.role + ' - '+ self.member.username +  ' ['+ str(self.member.id) +']' + ' - '+ self.space.name + ' ['+ str(self.space.id) +']'
 
     #  User can have only one "SpaceRole" in each space so any previous one is overwriten if it exists
     def save(self, *args, **kwargs):

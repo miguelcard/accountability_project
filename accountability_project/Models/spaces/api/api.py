@@ -1,6 +1,7 @@
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, serializers
+from django.db import transaction
+from rest_framework import generics, status
 from Models.spaces.models import Space, SpaceRole
 from Models.spaces.api.serializers import SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer
 from django.db.models import Q
@@ -11,6 +12,7 @@ from Models.habits.models import BaseHabit
 from Models.habits.api.serializers import GoalSerializerToRead, RecurrentHabitSerializerToRead
 from rest_framework.response import Response
 from Models.spaces.api.permissions import IsSpaceAdminOrReadOnly
+from rest_framework.exceptions import NotFound
 
 """ ---------views for Spaces--------"""
 
@@ -81,4 +83,65 @@ class SpaceHabitsApiView(generics.GenericAPIView):
                 specific_serializer = GoalSerializerToRead(habit, context=context)
             response_data.append(specific_serializer.data) 
             
-        return self.get_paginated_response(response_data) if page is not None else Response(response_data)
+   
+# DELETE
+class SpaceRoleDeleteApiView(generics.GenericAPIView):
+    """
+    Unlinks a user from a space by deleting the space role associated with it
+    also changes user if he was the creator of the space
+    unlinks all habits from that user in that space
+    deletes space IF the space has no more members in it
+    """
+
+    # permission_classes = [IsAuthenticated] and previously belonged to space?
+
+    @transaction.atomic
+    def delete(self, request, pk=None):
+        user = self.request.user
+        space = get_object_or_404(Space, pk=pk)
+        user_is_related_to_space = False
+        try:
+            # query if user is member
+            space_role = SpaceRole.objects.get(space__id=space.id, member=user.id)
+        except SpaceRole.DoesNotExist:
+            space_role = None
+        
+        if space_role is not None:
+            user_is_related_to_space = True
+            space_role.delete()
+            print('Log: space role deleted for user id: {} and space id: {}'.format(user.id, space.id))
+            self.unlink_habits(space, user)
+            
+        # if user is creator additionally replace him by next user in the group,  if no more users are in the group, delete whole space
+        if space.creator == self.request.user:
+            user_is_related_to_space = True
+            print('Changing user id: {} from being the creator of space id: {}'.format(user.id, space.id))
+            members_list = space.members.all()
+            for member in members_list:
+                if member is not user:
+                    space.creator = member
+                    print('New creator user with id: {} set to space with id: {}'.format(member.id, space.id))
+                    break
+
+            space.save()
+            self.unlink_habits(space, user)
+
+        if not user_is_related_to_space:
+            raise NotFound('User does not belong to the Space')
+
+        if not space.members.all():
+            space.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    def unlink_habits(self, space, user):
+
+        user_habits = user.habits.all()
+        space_habits = space.space_habits.all()
+
+        intersection_habits = list(set(user_habits).intersection(space_habits))
+
+        for habit in intersection_habits:
+            habit.spaces.remove(space)
+            habit.save()

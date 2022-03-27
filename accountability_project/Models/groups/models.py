@@ -10,7 +10,7 @@ class Post(models.Model):
                             on_delete=models.CASCADE,
                             null=False,
                             blank=False,
-                            related_name='user')
+                            related_name='posts')
     content = models.TextField('contents', max_length=255, blank=False, null=False)
     images = models.ImageField(upload_to='images/posts/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
