@@ -66,3 +66,15 @@ class SpaceRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpaceRole
         fields = '__all__'
+
+class SpaceRoleSerializerForEdition(serializers.ModelSerializer):
+    """
+    With space field read only and member (user) read only -> the only way of adding a new user to the space should be only by creating a new space role
+    """
+    class Meta:
+        model = SpaceRole
+        fields = '__all__'
+        read_only_fields = (
+            'space',
+            'member'
+        )

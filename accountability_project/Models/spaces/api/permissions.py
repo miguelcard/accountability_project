@@ -4,21 +4,18 @@ from Models.spaces.models import SpaceRole
 
 # Note: has_permission is called on all HTTP requests whereas, has_object_permission is called only for detail methods (GET, PUT, PATCH) so it can be that both are called
 
-class IsSpaceAdminOrReadOnly(permissions.BasePermission):
+class IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly(permissions.BasePermission):
     """
-    Object-level permission to only allow admins of a Space to edit it.
-    Assumes the model instance has an `admin` attribute.
+    Permission only for admins of a space based on a SpaceRole
     """
-    message = 'You must be the admin of this object to edit it'
+    message = 'You must be the admin of the Space to manage its SpaceRoles'
 
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        # Test code to delete
-        foo = obj.spaceroles.filter(member=request.user, role='admin').exists()
-        print(f'user: {request.user.username} has permission to edit: {foo}')
-        # end of test code
-        return obj.spaceroles.filter(member=request.user, role='admin').exists()
+        
+        space = obj.space
+        return space.spaceroles.filter(member=request.user, role='admin').exists()
 
 
 class BelongsToSpaceFromSpaceRole(permissions.BasePermission):
@@ -59,7 +56,24 @@ class HasEqualOrHigherRoleAsNewUser(permissions.BasePermission):
         return False
 
 
-# Example:
+# Examples:
+
+# class IsSpaceObjectAdminOrReadOnly(permissions.BasePermission):
+#     """
+#     Object-level permission to only allow admins of a Space to edit it.
+#     Assumes the model instance has an `admin` attribute.
+#     """
+#     message = 'You must be the admin of this object to edit it'
+
+#     def has_object_permission(self, request, view, obj):
+#         if request.method in permissions.SAFE_METHODS:
+#             return True
+#         # Test code to delete
+#         foo = obj.spaceroles.filter(member=request.user, role='admin').exists()
+#         print(f'user: {request.user.username} has permission to edit: {foo}')
+#         # end of test code
+#         return obj.spaceroles.filter(member=request.user, role='admin').exists()
+
 # class IsOwnerOrReadOnly(permissions.BasePermission):
 #     """
 #     Object-level permission to only allow owners of an object to edit it.
