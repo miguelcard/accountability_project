@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from rest_framework import generics, status
 from Models.spaces.models import Space, SpaceRole
-from Models.spaces.api.serializers import SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer
+from Models.spaces.api.serializers import SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer, SpaceRoleSerializerForEdition
 from django.db.models import Q
 from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,7 +12,7 @@ from Models.habits.models import BaseHabit
 from Models.habits.api.serializers import GoalSerializerToRead, RecurrentHabitSerializerToRead
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from Models.spaces.api.permissions import IsSpaceAdminOrReadOnly, BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser
+from Models.spaces.api.permissions import BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser, IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly
 from rest_framework.exceptions import NotFound
 
 """ ---------views for Spaces--------"""
@@ -153,3 +153,23 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
     """
     permission_classes = [IsAuthenticated, BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser]
     serializer_class = SpaceRoleSerializer
+
+# PUT, PATCH
+class SpaceRoleEditApiView(generics.UpdateAPIView):
+    """
+    admin roles of an Space can edit a member's role (update SpaceRole role)
+    """
+    permission_classes = [IsAuthenticated, IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly]
+    serializer_class = SpaceRoleSerializer
+
+    def get_queryset(self):
+        # below sample code returns all the SpaceRoles that belong to a Space where the request user is an admin, 
+        # but it can be replaced by IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly, the only difference is that permission class writes custom error message
+        # return SpaceRole.objects.filter(space__in = Space.objects.filter(spaceroles__member=self.request.user, spaceroles__role='admin'))
+        return SpaceRole.objects.all()
+
+    def get_serializer_class(self):
+        serializer_class = self.serializer_class
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = SpaceRoleSerializerForEdition
+        return serializer_class
