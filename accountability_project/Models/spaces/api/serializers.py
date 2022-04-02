@@ -66,4 +66,3 @@ class SpaceRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpaceRole
         fields = '__all__'
-        # to create and apply custom permissions on object level, must be done in serializer_class

@@ -11,7 +11,8 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from Models.habits.models import BaseHabit
 from Models.habits.api.serializers import GoalSerializerToRead, RecurrentHabitSerializerToRead
 from rest_framework.response import Response
-from Models.spaces.api.permissions import IsSpaceAdminOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+from Models.spaces.api.permissions import IsSpaceAdminOrReadOnly, BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser
 from rest_framework.exceptions import NotFound
 
 """ ---------views for Spaces--------"""
@@ -93,8 +94,6 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
     deletes space IF the space has no more members in it
     """
 
-    # permission_classes = [IsAuthenticated] and previously belonged to space?
-
     @transaction.atomic
     def delete(self, request, pk=None):
         user = self.request.user
@@ -145,3 +144,12 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
         for habit in intersection_habits:
             habit.spaces.remove(space)
             habit.save()
+
+# POST
+class SpaceRoleInviteApiView(generics.CreateAPIView):
+    """
+    Creates a Spacerole / a role for a user in a space, requested by an existing user of
+    that space, i.e. the endpoint where one user adds another one to the space
+    """
+    permission_classes = [IsAuthenticated, BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser]
+    serializer_class = SpaceRoleSerializer
