@@ -3,8 +3,7 @@ from Models.users.models import User
 
 class Space(models.Model):
 
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='owned_spaces') #  offered me one of the group members to take over as an admin.
-    # creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # use Protect if the creator has higher rights as the admin, else set to SET_NULL and handle rest in bussiness logic
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='owned_spaces')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField('habits.HabitTag', blank=True)
