@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from Models.spaces.models import Space, SpaceRole
 from Models.spaces.api.serializers import SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer, SpaceRoleSerializerForEdition
 from django.db.models import Q
-from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination
+from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination, SpaceRolesPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from Models.habits.models import BaseHabit
@@ -93,7 +93,6 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
     unlinks all habits from that user in that space
     deletes space IF the space has no more members in it
     """
-
     @transaction.atomic
     def delete(self, request, pk=None):
         user = self.request.user
@@ -132,7 +131,6 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
             space.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
     def unlink_habits(self, space, user):
 
@@ -173,3 +171,20 @@ class SpaceRoleEditApiView(generics.UpdateAPIView):
         if self.request.method == 'PUT' or self.request.method == 'PATCH':
             serializer_class = SpaceRoleSerializerForEdition
         return serializer_class
+
+# GET
+class SpaceRolesListApiView(generics.ListAPIView):
+    """
+    Gets list of all the spaceroles from a space where user belongs
+    """
+    serializer_class = SpaceRoleSerializer
+    pagination_class = SpaceRolesPagination
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_fields = ['role', 'member__id', 'member__username'] 
+    ordering_fields = ['id', 'role', 'member__username', 'member__id', 'member__name']
+    search_fields = ['id', 'role', 'member__username', 'member__id', 'member__name'] 
+
+    def get_queryset(self):
+        space_id = self.kwargs.get("space_pk")
+        space = get_object_or_404(Space, id=space_id, members=self.request.user)
+        return space.spaceroles.all()
