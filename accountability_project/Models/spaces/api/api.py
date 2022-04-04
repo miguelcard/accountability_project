@@ -1,3 +1,4 @@
+import logging
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -14,6 +15,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from Models.spaces.api.permissions import BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser, IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly
 from rest_framework.exceptions import NotFound
+
+logger = logging.getLogger(__name__)
 
 """ ---------views for Spaces--------"""
 
@@ -107,18 +110,18 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
         if space_role is not None:
             user_is_related_to_space = True
             space_role.delete()
-            print('Log: space role deleted for user id: {} and space id: {}'.format(user.id, space.id))
+            logger.info(f'space role deleted for user with id: {user.id} uname: {user.username} and space with id: {space.id} name: {space.name}')
             self.unlink_habits(space, user)
             
         # if user is creator additionally replace him by next user in the group,  if no more users are in the group, delete whole space
         if space.creator == self.request.user:
             user_is_related_to_space = True
-            print('Changing user id: {} from being the creator of space id: {}'.format(user.id, space.id))
+            logger.info(f'Changing user with id: {user.id} uname: {user.username} from being the creator of space with id: {space.id} name: {space.name}')
             members_list = space.members.all()
             for member in members_list:
                 if member is not user:
                     space.creator = member
-                    print('New creator user with id: {} set to space with id: {}'.format(member.id, space.id))
+                    logger.info(f'New creator user with id: {user.id} uname: {user.username} set to space with id: {space.id} name: {space.name}')
                     break
 
             space.save()
@@ -186,5 +189,7 @@ class SpaceRolesListApiView(generics.ListAPIView):
 
     def get_queryset(self):
         space_id = self.kwargs.get("space_pk")
+        logger.info(f' Get all roles from space with id: {space_id}')
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
+        logger.info(f' Retrieving all roles for space with id: {space_id} and name: {space.name}')
         return space.spaceroles.all()
