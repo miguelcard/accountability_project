@@ -6,15 +6,21 @@ from Models.habits.models import BaseHabit
 # ADD -> if in safe methods AND if in same space ...(he can view) -> add another permission for this
 class IsOwnerOfParentHabit(BasePermission):
 
-    message = 'You must be the owner of the parent of this object'
+    message = 'You must be the owner of the parent habit of this checkmark and the new checkmark body must have the habit id you own'
 
     def has_permission(self, request, view):
         habit_id = view.kwargs.get("habit_pk")
         try:
-            BaseHabit.objects.get(id=habit_id, owner=view.request.user.id)
-            return True
+            habit = BaseHabit.objects.get(id=habit_id, owner=view.request.user.id)
         except BaseHabit.DoesNotExist:
             return False
+
+        checkmark_serializer = view.get_serializer(data=request.data)
+        checkmark_serializer.is_valid(raise_exception=True)
+        serializer_habit = checkmark_serializer.validated_data['habit']
+        
+        return True if (habit == serializer_habit) else False
+
 
     def has_object_permission(self, request, view, obj):
         return (obj.habit.owner == request.user)
