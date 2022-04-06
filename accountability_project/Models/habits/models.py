@@ -29,7 +29,7 @@ class BaseHabit(models.Model):
 
     def __str__(self):
         """Unicode representation of MODELNAME."""
-        return f'{self.title}'
+        return f'{self.id} - {self.title}'
     
 class RecurrentHabit(BaseHabit):
 
@@ -98,6 +98,9 @@ class CheckMark(models.Model):
         verbose_name_plural = 'Check Marks'
         ordering = ['-date']
         db_table = 'checkmark'
+
+    def __str__(self):
+        return f'{self.date} - {self.status} - ({self.habit})'
 
 class Milestone(models.Model):
 
