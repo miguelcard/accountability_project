@@ -171,7 +171,7 @@ class SpaceRoleEditApiView(generics.UpdateAPIView):
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
-        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+        if self.request is not None and (self.request.method == 'PUT' or self.request.method == 'PATCH'):
             serializer_class = SpaceRoleSerializerForEdition
         return serializer_class
 
