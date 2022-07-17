@@ -1,0 +1,152 @@
+
+/*================HEADER================*/
+
+.content-Header {
+    /* background: grey; */
+    height: 120vh;
+    background:
+                url('../../../statics//images/jumping-2194230-0.png') no-repeat right 2vh/135vh 128vh,
+                url('../../../statics/images/circle.png') no-repeat 116vh -10%/105vh 110vh;
+    margin: 0 0 24vh 0;
+}
+
+.container-header {
+    /* background: yellow; */
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.info {
+    /* background: red; */
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.info #phara {
+    /* background:yellow; */
+    width: 80%;
+    margin-left: 23vh;
+    font-size: 26px;
+    margin-top: 1rem;
+}
+
+.info img {
+    width: 10%;
+    margin-left: 96%;
+}
+
+.tittle {
+    /* background:chartreuse; */
+    width: 90%;
+    height: 212px;
+    margin-top: -20vh;
+    margin-left: 33vh;
+}
+
+#t1 {
+    font-size: 80px;
+    font-family: Inter;
+    font-weight: bold;
+}
+
+#btn-getStart {
+    background: #7B73ff;
+    width: 200px;
+    height: 58px;
+    margin-right: 41vh;
+    margin-top: 25px;
+    border-radius: 6px;
+    font-size: 18px;
+    border-style: none;
+}
+
+#btn-getStart:hover {
+    background: rgba(123, 115, 255, 0.7);
+}
+
+.signIn {
+    /* background: turquoise; */
+    margin-right: 39%;
+    width: 20%;
+    display: flex;
+    justify-content: center;
+}
+
+.signIn p{
+    /* background:tomato; */
+    font-size: 20px;
+}
+
+.signIn .link-signin {
+    text-decoration: none;
+    color: #0645AD;
+}
+
+.logo-info {
+    /* background: blanchedalmond; */
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.logo-info img {
+    width: 10%;
+    margin-top: 90%;
+    margin-left: 24%;
+}
+
+
+/*================section How its work=================*/
+
+.how-its-work {
+    /* background: turquoise; */
+    margin-top: -10vh;
+    height: 100vh;
+}
+
+.all-content-work {
+    background-image: url('../../../statics/images/Mask\ Group.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/*=================section get a partner================*/
+
+
+.getApartner {
+    height: 185vh;
+    background: url('../../../statics/images/Features\ 4.png') no-repeat left 0/100% 49%,
+                url('../../../statics/images/triangle.png') no-repeat right 87vh/79% 50%;
+}
+
+.getApartner img {
+    height: 110vh;
+    width: 60%;
+    margin-top: -45vh;
+    margin-left: -20vh;
+}
+
+
+/*=============asked-questions===============*/
+
+.asked-questions {
+    height: 220vh;
+    background: url('../../../statics/images/lady-with-megaphone-2194239-0.png') no-repeat 125vh -30vh/50% 48%,
+                url('../../../statics/images/vectorFrequently.png') no-repeat 0 28vh/82% 79%;
+}
+
+.footer {
+    height: 50vh;
+}

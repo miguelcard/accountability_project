@@ -1,16 +1,43 @@
 version: '3'
 
 services:
+    frontend:
+        command : "npm start"
+        container_name: front
+        build:
+            context: ./frontend/
+            dockerfile: Dockerfile
+        # add voulmes also to enabke runtime changes while doccker runs/ is up           
+        ports:
+            - "3000:3000"
+        stdin_open: true
+        depends_on:
+            - web
+        networks:
+            - app-net
+
     web:
-        build: . 
-        command: python accountability_project/manage.py runserver 0.0.0.0:8000 
-        volumes:
-            - .:/code 
+        # restart: always
+        command: python manage.py runserver 0.0.0.0:8000
+        container_name: back
+        build:
+            context: ./accountability_project/
+            dockerfile: Dockerfile
+        # volumes:
+        #     # https://stackoverflow.com/questions/44694086/when-run-docker-compose-up-i-get-python-cant-open-file-manage-py-errno-2
+        #     # just means that changes done in here (of the source code) in the host are also instantly applied/ persisted inside the container
+        #     # persists data of the source code inside the container, and changes from the container back to this host
+        #     # - backend:/code/backend
+        #     # - .:/code
+        #     - ./accountability_project:/code/backend
         ports:
             - "8000:8000"
         
         depends_on:
             - db
+        networks:
+            - app-net
+
     db:
         image: postgres:13
         container_name: db
@@ -28,6 +55,9 @@ services:
             - ./db:/docker-entrypoint-initdb.d/
         ports:
             - "5433:5432"
+        networks:
+            - app-net
+
     pgadmin:  
         image: dpage/pgadmin4  
         environment:
@@ -38,8 +68,13 @@ services:
             - pgadmin:/var/lib/pgadmin
         ports:
             - "5051:80"
+
 volumes: 
     pg-data:
         driver: local
     pgadmin:
         driver: local
+
+networks:
+  app-net:
+    driver: bridge

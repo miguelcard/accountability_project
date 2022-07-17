@@ -1,0 +1,131 @@
+.wraper-register {
+    /* background: turquoise; */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.41) 0%, rgba(115, 82, 255, 0.29) 100%);
+    height: 130vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.container-register {
+    /* background: wheat; */
+    width: 90%;
+    height: 95%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 3rem;
+}
+
+.tittle-register {
+    /* background: springgreen; */
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.tittle-register h1{
+    font-family: Inter;
+    font-style: normal;
+    font-size: 90px;
+    font-weight: 500;
+    line-height: 62px;
+    color: #1A1A1A;
+    margin-bottom: 3rem;
+}
+
+.register {
+    background: #fff;
+    width: 68%;
+    height: 77%;
+    display: flex;
+    flex-direction: row;
+    border-radius: 48px;
+    backdrop-filter: blur(12px);
+}
+
+.stn-1 {
+    background: rgba(115, 82, 255, 0.8);
+    width: 50%;
+    border-radius: 0 48px 48px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.stn-1 h2 {
+    /* background: tomato; */
+    width: 58%;
+    font-family: Inter;
+    font-weight: 500;
+    font-size: 34px;
+    color: #fff;
+    margin-top: 14vh;
+}
+
+.stn-1 #img-1 {
+    margin-right: 30%;
+    width: 28%;
+    margin-top: 10px;
+}
+
+.stn-1 p {
+    /* background: wheat; */
+    width: 70%;
+    font-family: Inter;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 28px;
+    line-height: 32px;
+    color: #fff;
+    margin-top: 8vh;
+    margin-left: 10%;
+}
+
+.stn-1 button {
+    background: transparent;
+    width: 44%;
+    margin-top: 3vh;
+    font-size: 29px;
+    font-family: Inter;
+    font-weight: 500;
+    border: 1.5px solid #fff;
+    box-sizing: border-box;
+    border-radius: 38px;
+}
+
+.stn-1 button:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: rgba(0, 0, 0, 0.9);
+    border: none;
+}
+
+.stn-1 #img-2 {
+    width: 100%;
+    height: 60%;
+    margin-top: -2vh;
+}
+
+.stn-2 {
+    width: 50%;
+}
+
+.stn-2 h2 {
+    font-family: Inter;
+    font-size: 34px;
+    margin-left: 25%;
+    margin-top: 20%;
+}
+
+.stn-2 #img-2 {
+    width: 30%;
+    height: 3px;
+    margin-left: 33%;
+    margin-top: 8px;
+    margin-bottom: 5vh;
+}
