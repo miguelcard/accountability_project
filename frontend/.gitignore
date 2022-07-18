@@ -1,16 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-
-# __________Back-end________
-__pycache__/
-**/.vscode/
-static/
-env/
-idea/
-
-
-# __________Front-end________
-
 # dependencies
 /node_modules
 /.pnp

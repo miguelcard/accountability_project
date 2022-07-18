@@ -1,0 +1,19 @@
+.total-nav {
+    background: rgb(0, 0, 0) transparent;
+    height: 14vh;
+}
+
+.logotipeLogin img{
+    height: 6vh;
+    width: 14vh;
+    margin-left: 40%;
+}
+
+#secont-item {
+    margin-right: 10%;
+    color: black;
+    font-size: 30px;
+    font-family: Inter;
+    font-weight: 500;
+    line-height: 30px;
+}

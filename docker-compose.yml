@@ -1,16 +1,47 @@
 version: '3'
 
 services:
-    web:
-        build: . 
-        command: python accountability_project/manage.py runserver 0.0.0.0:8000 
+    frontend:
+        command : "npm start"
+        container_name: front
+        build:
+            context: ./frontend/
+            dockerfile: Dockerfile
         volumes:
-            - .:/code 
+            # just means that changes done here (in source code/ in the host) are also instantly applied/persisted inside the container
+            - ./frontend:/code/frontend # TODO use "$PWD"/frontend maybe
+            # We need to mount the node_modules folder because the volume is not mounted during the build
+            - /code/frontend/node_modules
+        environment:
+            #  Use polling to watch for file changes 
+            - CHOKIDAR_USEPOLLING=true
+        ports:
+            - "3000:3000"
+        stdin_open: true
+        depends_on:
+            - web
+        networks:
+            - frontend
+
+    web:
+        # restart: always
+        command: python manage.py runserver 0.0.0.0:8000
+        container_name: back
+        build:
+            context: ./accountability_project/
+            dockerfile: Dockerfile
+        volumes:
+            # just means that changes done here (in source code/ in the host) are also instantly applied/persisted inside the container
+            - ./accountability_project:/code/backend
         ports:
             - "8000:8000"
         
         depends_on:
             - db
+        networks:
+            - frontend
+            - backend
+
     db:
         image: postgres:13
         container_name: db
@@ -28,8 +59,13 @@ services:
             - ./db:/docker-entrypoint-initdb.d/
         ports:
             - "5433:5432"
+        networks:
+            - backend
+            - db_admin
+
     pgadmin:  
-        image: dpage/pgadmin4  
+        image: dpage/pgadmin4
+        container_name: pg_admin
         environment:
             PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
             PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
@@ -38,8 +74,19 @@ services:
             - pgadmin:/var/lib/pgadmin
         ports:
             - "5051:80"
+        networks:
+            - db_admin
+
 volumes: 
     pg-data:
         driver: local
     pgadmin:
         driver: local
+
+networks:
+    frontend:
+        driver: bridge
+    backend:
+        driver: bridge
+    db_admin:
+        driver: bridge
