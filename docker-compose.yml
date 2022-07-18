@@ -7,14 +7,21 @@ services:
         build:
             context: ./frontend/
             dockerfile: Dockerfile
-        # add voulmes also to enabke runtime changes while doccker runs/ is up           
+        volumes:
+            # just means that changes done here (in source code/ in the host) are also instantly applied/persisted inside the container
+            - ./frontend:/code/frontend # TODO use "$PWD"/frontend maybe
+            # We need to mount the node_modules folder because the volume is not mounted during the build
+            - /code/frontend/node_modules
+        environment:
+            #  Use polling to watch for file changes 
+            - CHOKIDAR_USEPOLLING=true
         ports:
             - "3000:3000"
         stdin_open: true
         depends_on:
             - web
         networks:
-            - app-net
+            - frontend
 
     web:
         # restart: always
@@ -23,20 +30,17 @@ services:
         build:
             context: ./accountability_project/
             dockerfile: Dockerfile
-        # volumes:
-        #     # https://stackoverflow.com/questions/44694086/when-run-docker-compose-up-i-get-python-cant-open-file-manage-py-errno-2
-        #     # just means that changes done in here (of the source code) in the host are also instantly applied/ persisted inside the container
-        #     # persists data of the source code inside the container, and changes from the container back to this host
-        #     # - backend:/code/backend
-        #     # - .:/code
-        #     - ./accountability_project:/code/backend
+        volumes:
+            # just means that changes done here (in source code/ in the host) are also instantly applied/persisted inside the container
+            - ./accountability_project:/code/backend
         ports:
             - "8000:8000"
         
         depends_on:
             - db
         networks:
-            - app-net
+            - frontend
+            - backend
 
     db:
         image: postgres:13
@@ -56,10 +60,12 @@ services:
         ports:
             - "5433:5432"
         networks:
-            - app-net
+            - backend
+            - db_admin
 
     pgadmin:  
-        image: dpage/pgadmin4  
+        image: dpage/pgadmin4
+        container_name: pg_admin
         environment:
             PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
             PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
@@ -68,6 +74,8 @@ services:
             - pgadmin:/var/lib/pgadmin
         ports:
             - "5051:80"
+        networks:
+            - db_admin
 
 volumes: 
     pg-data:
@@ -76,5 +84,9 @@ volumes:
         driver: local
 
 networks:
-  app-net:
-    driver: bridge
+    frontend:
+        driver: bridge
+    backend:
+        driver: bridge
+    db_admin:
+        driver: bridge

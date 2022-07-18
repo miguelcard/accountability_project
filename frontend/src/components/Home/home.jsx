@@ -30,7 +30,7 @@ const Home = () => {
                         <div className="info">
                             <div className="tittle">
                                 <h1 id="t1">Where accountability</h1>
-                                <h1 id="t1">meets a partner</h1>
+                                <h1 id="t1">meets partner</h1>
                             </div>
                             <p id="phara">Meet Find Our Tribe. The best website to get motivated, build healthy habits, and find an accountability partner</p>
                             <button onClick={eventUp} type="button" className="btn btn-primary" id="btn-getStart">Get Started</button>
