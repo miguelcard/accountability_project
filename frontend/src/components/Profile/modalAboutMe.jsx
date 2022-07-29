@@ -14,7 +14,6 @@ const ModalAboutMe = ({ token, openModal, isOpen, getUserDataAction, sendAnyUser
 
         if (stateText != null) {
             const res = await sendAnyUserData(bodyFormData, token)
-            console.log(res)
             if (res.status === 200) {
                 openModal()
                 getUserDataAction(token)

@@ -10,15 +10,12 @@ const API = process.env.REACT_APP_API_REST
 
 
 const Group = ({ group, fetching, user }) => {
-    // console.log(group)
-    // console.log(user.id)
     const [contentFiles, setContentFiles] = useState(null)
     const [content, setContent] = useState(null)
     const history = useHistory()
 
 
     const sendFiles = (e) => {
-        console.log(e)
         setContentFiles(e)
     }
 
@@ -39,7 +36,7 @@ const Group = ({ group, fetching, user }) => {
             data: bodyData
         })
         .then(res => {
-            console.log(res.data)
+            // console.log(res.data)
         })
         .catch(error => {
             console.log(error)

@@ -28,7 +28,6 @@ function Register({ sendDataRegisterAction }) {
         bodyFormData.append('password2', password2)
 
         const res = await sendDataRegisterAction(bodyFormData)
-        console.log(res)
         if (res.status === 200) {
             history.push('/profile')
         }

@@ -36,7 +36,7 @@ export const reducer = (state = initialState, action) => {
                 updatedList: action.payload
             }
         case GET_SUCCESS_DATA_LANGUAGES:
-            return{
+            return {
                 ...state,
                 languageList: action.payload,
                 fetching: false
@@ -124,7 +124,7 @@ const saveAnyThingInLocalStorage = (str, item) => {
 //actions for restore storage
 
 export const restoreSessionAction = () => dispatch => {
-    let store =  localStorage.getItem('storage')
+    let store = localStorage.getItem('storage')
     //convert to object
     store = JSON.parse(store)
     if (store && store.authentication.token) {
@@ -186,19 +186,18 @@ export const logoutAction = (token) => async (dispatch) => {
             },
         }
         axios.post(`${API}/api/v1/logout/`, null, config)
-        .then(res => {
-            // console.log(res.data)
-            resolve(res.data)
-            dispatch({
-                type: LOGOUT_SUCCESS
+            .then(res => {
+                resolve(res.data)
+                dispatch({
+                    type: LOGOUT_SUCCESS
+                })
             })
-        })
-        .catch(error => {
-            reject(error)
-            console.log(error)
-    })})
+            .catch(error => {
+                reject(error)
+                console.log(error)
+            })
+    })
     // localStorage.removeItem('storage')
-    // console.log(lastData)
     return lastData
 }
 
@@ -222,19 +221,18 @@ export const sendUpdatedLanguages = (token, idLanguage) => async (dispatch) => {
             url: `${API}/api/v1.1/user/`,
             data: bodyFormData
         })
-        .then(res => {
-            console.log(res.data)
-            returnData(res)
-            dispatch({
-                type: CREATE_SUCCESS_USER_DATA,
-                payload: res.data
+            .then(res => {
+                returnData(res)
+                dispatch({
+                    type: CREATE_SUCCESS_USER_DATA,
+                    payload: res.data
+                })
+                saveAnyThingInLocalStorage('updatedNewLanguage', res.data)
             })
-            saveAnyThingInLocalStorage('updatedNewLanguage', res.data)
-        })
-        .catch(error => {
-            console.log(error)
-            returnError(error)
-        })
+            .catch(error => {
+                console.log(error)
+                returnError(error)
+            })
     })
     return successData
 
@@ -253,24 +251,22 @@ export const sendDataLoginAction = (bodyFormData) => async (dispatch) => {
             url: `${API}/api/v1/login/`,
             data: bodyFormData,
         })
-        .then(res => {
-            console.log(res.data)
-            resolve(res)
-            dispatch({
-                type:GET_LOGIN_SUCCESS,
-                payload: res.data
+            .then(res => {
+                resolve(res)
+                dispatch({
+                    type: GET_LOGIN_SUCCESS,
+                    payload: res.data
+                })
+                // saveStorage(getState())
             })
-            // saveStorage(getState())
-        })
-        .catch(error => {
-            console.log(error)
-            reject(error)
-        })}
+            .catch(error => {
+                console.log(error)
+                reject(error)
+            })
+    }
     )
     saveStorage(ultimateData.data)
-    console.log(ultimateData)
     return ultimateData
-
 }
 
 
@@ -287,21 +283,19 @@ export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
             url: `${API}/api/v1/register/`,
             data: bodyData
         })
-        .then(res => {
-            // console.log(res)
-            DataReturn(res)
-            dispatch({
-                type: GET_SUCCESS_REGISTER,
-                payload: res.data
+            .then(res => {
+                DataReturn(res)
+                dispatch({
+                    type: GET_SUCCESS_REGISTER,
+                    payload: res.data
+                })
             })
-        })
-        .catch(error => {
-            console.log(error)
-            errorReturn(error)
-        })
+            .catch(error => {
+                console.log(error)
+                errorReturn(error)
+            })
     })
 
-    // console.log(totalData)
     saveStorage(totalData.data)
     return totalData
 }
@@ -321,18 +315,17 @@ export const sendProfilePhotoAction = (bodyFormData, token) => async (dispatch) 
             url: `${API}/api/v1.1/user/`,
             data: bodyFormData
         })
-        .then(res => {
-            console.log(res)
-            returnData(res)
-            dispatch({
-                type: CREATE_SUCCESS_PROFILE_PHOTO,
-                payload: res.data
+            .then(res => {
+                returnData(res)
+                dispatch({
+                    type: CREATE_SUCCESS_PROFILE_PHOTO,
+                    payload: res.data
+                })
             })
-        })
-        .catch(error => {
-            console.log(error)
-            returnError(error)
-        })
+            .catch(error => {
+                console.log(error)
+                returnError(error)
+            })
     })
     return successData
 }
@@ -349,18 +342,17 @@ export const getDataLanguages = (token) => async (dispatch) => {
             },
         }
         axios.get(`${API}/api/v1/users/languages/`, config)
-        .then(res => {
-            console.log(res.data);
-            returnData(res.data)
-            dispatch({
-                type: GET_SUCCESS_DATA_LANGUAGES,
-                payload: res.data
+            .then(res => {
+                returnData(res.data)
+                dispatch({
+                    type: GET_SUCCESS_DATA_LANGUAGES,
+                    payload: res.data
+                })
             })
-        })
-        .catch(error => {
-            console.log(error)
-            returnError(error)
-        })
+            .catch(error => {
+                console.log(error)
+                returnError(error)
+            })
     })
     saveStorageLanguages(successData)
     return successData
@@ -378,17 +370,16 @@ export const sendAnyUserData = (userFormData, token) => async (dispatch) => {
             },
         }
         axios.put(`${API}/api/v1.1/user/`, userFormData, config)
-        .then (res => {
-            console.log(res.data)
-            returnData(res)
-            dispatch({
-                type: CREATE_SUCCESS_USER_DATA,
-                payload: res.data
+            .then(res => {
+                returnData(res)
+                dispatch({
+                    type: CREATE_SUCCESS_USER_DATA,
+                    payload: res.data
+                })
             })
-        })
-        .catch(error => {
-            returnError(error)
-        })
+            .catch(error => {
+                returnError(error)
+            })
     })
 
     return totalRes
@@ -405,14 +396,14 @@ export const getUserDataAction = (token) => (dispatch) => {
         },
     }
     axios.get(`${API}/api/v1.1/user/`, config)
-    .then(res => {
-        dispatch({
-            type: GET_USER,
-            payload: res.data
+        .then(res => {
+            dispatch({
+                type: GET_USER,
+                payload: res.data
+            })
+            saveUserDataStorage(res.data)
         })
-        saveUserDataStorage(res.data)
-    })
-    .catch(error => {
-        console.log(error.data)
-    })
+        .catch(error => {
+            console.log(error.data)
+        })
 }

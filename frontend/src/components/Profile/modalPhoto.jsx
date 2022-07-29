@@ -8,12 +8,9 @@ import { sendProfilePhotoAction, getUserDataAction } from '../../redux/loginDuck
 
 const ModalPhoto = ({ openModal, isOpen, sendProfilePhotoAction, getUserDataAction, token }) => {
 
-    // console.log(props)
-
     const [profilePhoto, setProfilePhoto] = useState(null)
 
     const sendFiles = (e) => {
-        console.log(e)
         setProfilePhoto(e)
     }
 
@@ -25,7 +22,6 @@ const ModalPhoto = ({ openModal, isOpen, sendProfilePhotoAction, getUserDataActi
                 bodyData.append('profile_photo', profilePhoto[i])
             }
             const res = await sendProfilePhotoAction(bodyData, token)
-            console.log(res)
             if (res.status === 200) {
                 openModal()
                 // window.location.href = window.location.href + '';

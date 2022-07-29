@@ -12,7 +12,6 @@ import '../../assets/styles/components/Login/login.css'
 
 
 const Login = ({ fetching, sendDataLoginAction, getDataLanguages }) => {
-    // console.log(totalData)
     let history = useHistory();
     const [userName, setUsername] = useState(null)
     const [password, setPassword] = useState(null)
@@ -24,8 +23,6 @@ const Login = ({ fetching, sendDataLoginAction, getDataLanguages }) => {
         bodyFormData.append('username', userName)
         bodyFormData.append('password', password)
         const res = await sendDataLoginAction(bodyFormData)
-
-        console.log(res)
 
         if (res.status === 200) {
             getDataLanguages(res.data.authentication.token)

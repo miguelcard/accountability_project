@@ -27,8 +27,6 @@ const ModalInformation = ({ token, languages, isOpen, openModal, sendAnyUserData
         if (userFormData != null) {
             const newRes = await sendAnyUserData(userFormData, token)
 
-            console.log(newRes)
-
             if (newRes.status === 200) {
                 openModal()
                 getUserDataAction(token)
