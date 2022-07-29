@@ -93,7 +93,6 @@ export const getDataGroupsAction = () => (dispatch, getState) => {
     })
     axios.get(`${API}/api/v1/groups/`)
     .then(res => {
-        // console.log(res.data)
         dispatch({
             type: GET_SUCCESS_GROUPS,
             payload: res.data
@@ -101,6 +100,7 @@ export const getDataGroupsAction = () => (dispatch, getState) => {
     })
     .catch(error => {
         console.log(error)
+        // make some kind of error service ? ex: errorService.log(error) 
     })
 }
 
@@ -114,7 +114,6 @@ export const createUserIntoGroupAction = (bodyData, id) => (dispatch, getState) 
         data: bodyData
     })
     .then(res => {
-        console.log(res.data)
         dispatch({
             type:GET_SUCCESS_CREATED,
             payload: res.data
@@ -123,6 +122,7 @@ export const createUserIntoGroupAction = (bodyData, id) => (dispatch, getState) 
     })
     .catch(error => {
         console.log(error.response.data.message)
+        // make some kind of error service ? ex: errorService.log(error)
     })
 }
 
@@ -137,7 +137,6 @@ export const createGroupAction  = (body) => async (dispatch) => {
             data: body
         })
         .then(res => {
-            console.log(res.data)
             dataReturn(res.status)
             dispatch({
                 type: GET_SUCCESS_CREATED_GROUP,
@@ -146,6 +145,7 @@ export const createGroupAction  = (body) => async (dispatch) => {
         })
         .catch(error => {
             console.log(error)
+            // make some kind of error service ? ex: errorService.log(error) 
             errorReturn(error)
         })
     })

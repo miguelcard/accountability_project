@@ -9,7 +9,6 @@ const Information = ({ token, userInfo, userInfoUpdated, languageList }) => {
 
     const [stateModalInformation, setStateModalInformation] = useState({open: false})
     const languages = userInfo.languages.map(item => item.name)
-    console.log(languages)
 
     const openModalInfo = () => {
         setStateModalInformation({open: !stateModalInformation.open})

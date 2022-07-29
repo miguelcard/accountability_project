@@ -54,7 +54,6 @@ export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
             data: bodyData
         })
         .then(res => {
-            console.log(res.data)
             DataReturn(res.status)
             dispatch({
                 type: GET_SUCCESS_REGISTER,
@@ -66,6 +65,5 @@ export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
             errorReturn(error.response.data.message)
         })
     })
-    console.log(totalData)
     return totalData
 }

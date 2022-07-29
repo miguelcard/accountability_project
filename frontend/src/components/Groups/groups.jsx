@@ -7,8 +7,6 @@ import Loading from '../LoadingAndError/loading'
 
 
 const Groups = ({ groups, user, fetching, createUserIntoGroupAction, createGroupAction }) => {
-    // console.log(groups)
-    // console.log(user)
     const history = useHistory()
     const [state, setState] = useState({open: false})
     const [nameGroup, setNameGroup] = useState('')
@@ -26,12 +24,12 @@ const Groups = ({ groups, user, fetching, createUserIntoGroupAction, createGroup
             "theme": theme,
             "users": array3
         }
-        console.log(bodyData)
         createUserIntoGroupAction(bodyData, id)
         try {
             history.push(`/groups/${id}`)
         } catch (error) {
             console.log(error)
+            // make some kind of error service ? ex: errorService.log(error) 
         }
     }
 
