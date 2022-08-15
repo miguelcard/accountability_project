@@ -7,11 +7,11 @@ import imageRinse from '../../assets/statics/images/NumberHeading4.png'
 
 
 
-const HowItsWork = () => {
+const HowItWorks = () => {
     return (
         <div className="all-wraper">
             <div className="firt-content">
-                <h1>How its works</h1>
+                <h1>How it works</h1>
                 <p>create your profile in less than one minute (no long surveys!) an then:</p>
             </div>
             <div className="secont-content">
@@ -36,4 +36,4 @@ const HowItsWork = () => {
     )
 }
 
-export default HowItsWork
+export default HowItWorks

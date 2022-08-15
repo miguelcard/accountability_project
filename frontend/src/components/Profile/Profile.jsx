@@ -7,15 +7,12 @@ import HeaderProfile from './headerProfile';
 import '../../assets/styles/components/Profile/index.css'
 import profilePhoto from '../../assets/statics/images/Group2334.png'
 import PersonalInformation from './personalInformation';
-import Information from './information';
-import PartnerPreference from './partnerPreference';
-import Score from './score';
 
 
 const TOTAL_LOGOUT_SUCCESS = 'TOTAL_LOGOUT_SUCCESS'
 
 
-function Profile({ user, userUpdate, logoutAction, fetching, languageList }) {
+function Profile({ user, userUpdate, logoutAction, fetching }) {
   const history = useHistory();
   const dispatch = useDispatch();
   const [stateModal, setStateModal] = useState({ open: false });
@@ -38,6 +35,9 @@ function Profile({ user, userUpdate, logoutAction, fetching, languageList }) {
     history.push("/login");
   };
 
+
+  //  THIS IS ALL THE PROFILE LAYOUT, INCLUDING HEADERS AND FOOTERS IS THIS THE RIGHT PLACE FOR IT?, I ALSO DONT THINK THE HEADERS AND FOOTERS SHOULD BE DONE THIS WAY, RATHER TOGETHER IN A MORE REUSABLE FASHION
+  // SHOULNT THE PROFILE PART BE IN THE profileView.jsx file in the views folder?
   return (
     <>
       <HeaderProfile logout={logout} />
@@ -56,20 +56,6 @@ function Profile({ user, userUpdate, logoutAction, fetching, languageList }) {
           openModalAbout={openModalAbout}
           fetching={fetching}
         />
-        <div className="information">
-          <Information
-            token={user.authentication.token}
-            userInfo={user.user}
-            userInfoUpdated={userUpdate}
-            languageList={languageList}
-          />
-        </div>
-        <div className="partner-preferences">
-          <PartnerPreference />
-        </div>
-        <div className="your-score">
-          <Score />
-        </div>
       </div>
       <div className="footer">
         <FooterHome />

@@ -29,7 +29,7 @@ class Group(models.Model):
     theme = models.CharField('theme group', max_length=50)
     description = models.TextField('description', max_length=255, blank=True, null=True)
     users = models.ManyToManyField(User, related_name='users', blank=True)
-    post = models.ForeignKey(Post, on_delete = models.CASCADE, blank=True, null=True)
+    post = models.ForeignKey(Post, on_delete = models.CASCADE, blank=True, null=True) # THIS IS BULLSHIT; THIS WOULD MEAN THAT MANY GROUPS WOULD HAVE ONE POST; AND ONE POST WOULD BELONG TO MANY GROUPS; wrong!
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)

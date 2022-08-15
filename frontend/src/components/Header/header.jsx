@@ -33,15 +33,9 @@ const Header = (props) => {
                 <NavbarToggler onClick={toggle} />
                 <Collapse isOpen={isOpen} navbar className="total-nav">
                         <Nav className="nav-items" navbar>
-                            <NavItem className="row-1">
+                            {/* <NavItem className="row-1">
                                 <NavLink href="#" id="item">About</NavLink>
-                            </NavItem>
-                            <NavItem className="row-2">
-                                <NavLink href="#" id="item">Pricing</NavLink>
-                            </NavItem>
-                            <NavItem className="row-3">
-                                <NavLink href="#" id="item">Blog</NavLink>
-                            </NavItem>
+                            </NavItem> */}
                         </Nav>
                         {
                             !isOpen?

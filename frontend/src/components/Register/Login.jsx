@@ -3,7 +3,7 @@ import { useHistory, Link } from "react-router-dom";
 import { connect } from 'react-redux'
 
 
-import { getDataLanguages, sendDataLoginAction } from '../../redux/loginDucks'
+import {sendDataLoginAction } from '../../redux/loginDucks'
 import * as ReactBootStrap from 'react-bootstrap'
 import Loading from "../LoadingAndError/loading";
 
@@ -11,7 +11,7 @@ import '../../assets/styles/components/Login/login.css'
 
 
 
-const Login = ({ fetching, sendDataLoginAction, getDataLanguages }) => {
+const Login = ({ fetching, sendDataLoginAction }) => {
     let history = useHistory();
     const [userName, setUsername] = useState(null)
     const [password, setPassword] = useState(null)
@@ -25,7 +25,6 @@ const Login = ({ fetching, sendDataLoginAction, getDataLanguages }) => {
         const res = await sendDataLoginAction(bodyFormData)
 
         if (res.status === 200) {
-            getDataLanguages(res.data.authentication.token)
             history.push('/profile')
         }
     }
@@ -65,4 +64,4 @@ function mapStateToProps(state) {
     }
 }
 
-export default connect(mapStateToProps, { sendDataLoginAction, getDataLanguages })(Login)
+export default connect(mapStateToProps, { sendDataLoginAction })(Login)
