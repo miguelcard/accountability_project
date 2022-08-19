@@ -6,7 +6,6 @@ import HomeView from '../views/homeView'
 import ProfileView from '../views/profileView'
 import LoginView from '../views/loginView'
 import RegisterView from '../views/registerView'
-import Layaout from '../containers/layaout'
 
 
 

@@ -2,11 +2,11 @@ import React, { useState } from 'react'
 import {connect, useDispatch} from 'react-redux'
 import { useHistory } from "react-router-dom";
 import { logoutAction } from '../../redux/loginDucks'
-import FooterHome from '../Home/footerHome';
-import HeaderProfile from './headerProfile';
+import FooterHome from '../Home/FooterHome';
+import HeaderProfile from './HeaderProfile';
 import '../../assets/styles/components/Profile/index.css'
 import profilePhoto from '../../assets/statics/images/Group2334.png'
-import PersonalInformation from './personalInformation';
+import PersonalInformation from './PersonalInformation';
 
 
 const TOTAL_LOGOUT_SUCCESS = 'TOTAL_LOGOUT_SUCCESS'

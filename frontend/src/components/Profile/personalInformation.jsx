@@ -1,10 +1,10 @@
 import React from 'react'
-import ModalPhoto from './modalPhoto';
+import ModalPhoto from './ModalPhoto';
 import { Button } from 'reactstrap'
 import '../../assets/styles/components/Profile/index.css'
 import pencil from '../../assets/statics/images/pencil.png'
-import ModalAboutMe from './modalAboutMe';
-import Loading from '../LoadingAndError/loading';
+import ModalAboutMe from './ModalAboutMe';
+import Loading from '../LoadingAndError/Loading';
 
 
 

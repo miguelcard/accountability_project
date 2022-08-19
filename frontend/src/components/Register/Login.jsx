@@ -5,7 +5,7 @@ import { connect } from 'react-redux'
 
 import {sendDataLoginAction } from '../../redux/loginDucks'
 import * as ReactBootStrap from 'react-bootstrap'
-import Loading from "../LoadingAndError/loading";
+import Loading from "../LoadingAndError/Loading";
 
 import '../../assets/styles/components/Login/login.css'
 

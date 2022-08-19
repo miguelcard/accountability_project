@@ -2,13 +2,13 @@ import React from 'react'
 import {Link} from 'react-router-dom'
 import { useHistory } from "react-router-dom";
 
-import Header from '../Header/header'
+import Header from '../Header/Header'
 import '../../assets/styles/components/Home/index.css'
 import '../../assets/styles/components/Home/responsiveDesing.css'
 import logoCircle2 from '../../assets/statics/images/TurquoiseCircle.png'
 import logoCircle1 from '../../assets/statics/images/OrangeCircle.png'
-import HowItWorks from './howItWorks';
-import FooterHome from './footerHome';
+import HowItWorks from './HowItWorks';
+import FooterHome from './FooterHome';
 
 const Home = () => {
 

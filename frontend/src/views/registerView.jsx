@@ -1,5 +1,5 @@
 import React from 'react'
-import HeaderLogin from '../components/Register/headerLogin'
+import HeaderLogin from '../components/Register/HeaderLogin'
 import line from '../assets/statics/images/line.png'
 import line2 from '../assets/statics/images/line2.png'
 import Register from '../components/Register/Register'
