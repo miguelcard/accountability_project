@@ -11,7 +11,7 @@ import {
 import logotype from '../../assets/statics/images/logotype.png'
 import '../../assets/styles/components/Profile/headerProfile.css'
 
-const HeaderProfile = (props) => {
+const HeaderProfile = (props) => {              // this name "Header Profile" is not intuitive at all, this is just a header when the user is logged in, it would also not belong to this profile folder
     const [isOpen, setIsOpen] = useState(false);
 
     const toggle = () => setIsOpen(!isOpen);
@@ -34,9 +34,6 @@ const HeaderProfile = (props) => {
                             <NavLink href="#" id="link">My Partners</NavLink>
                         </NavItem>
                         <NavItem className="item-4">
-                            <NavLink href="/groups" id="link">Interest Groups</NavLink>
-                        </NavItem>
-                        <NavItem className="item-5">
                             <NavLink href="/profile" id="link">Profile</NavLink>
                         </NavItem>
                     </Nav>

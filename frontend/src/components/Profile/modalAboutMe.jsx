@@ -26,7 +26,7 @@ const ModalAboutMe = ({ token, openModal, isOpen, getUserDataAction, sendAnyUser
     return (
         <>
             <Modal isOpen={isOpen}>
-                <ModalHeader>About me</ModalHeader>
+                <ModalHeader>About me motherfuckers</ModalHeader>
                 <ModalBody>
                     <FormGroup>
                         <Label>Tell us about you</Label>

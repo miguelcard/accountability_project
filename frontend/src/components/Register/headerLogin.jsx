@@ -19,9 +19,6 @@ const HeaderLogin = (props) => {
           <NavbarBrand href="/" className="logotipeLogin">
             <img src={logotype} alt="logo" />
           </NavbarBrand>
-          <NavbarText className="ml-auto" id="secont-item">
-            FAQ
-          </NavbarText>
         </Navbar>
       </>
     );

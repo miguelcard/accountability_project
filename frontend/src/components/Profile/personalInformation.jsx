@@ -1,10 +1,10 @@
 import React from 'react'
-import ModalPhoto from './modalPhoto';
+import ModalPhoto from './ModalPhoto';
 import { Button } from 'reactstrap'
 import '../../assets/styles/components/Profile/index.css'
 import pencil from '../../assets/statics/images/pencil.png'
-import ModalAboutMe from './modalAboutMe';
-import Loading from '../LoadingAndError/loading';
+import ModalAboutMe from './ModalAboutMe';
+import Loading from '../LoadingAndError/Loading';
 
 
 
@@ -23,7 +23,7 @@ const PersonalInformation = ({
   token
 }) => {
 
-  if (fetching) return <Loading/>
+  if (fetching) return <Loading />
 
   return (
     <>
@@ -36,19 +36,19 @@ const PersonalInformation = ({
               updatedUserPhoto
                 ? `${updatedUserPhoto}`
                 : userPhoto
-                ? `${userPhoto}`
-                : defaultPhoto
+                  ? `${userPhoto}`
+                  : defaultPhoto
             }
             alt="profilePhoto"
             id="photo"
           />
-          <Button  onClick={openModal} id="btn-pencil">
+          <Button onClick={openModal} id="btn-pencil">
             {
               updatedUserPhoto
-                ? <img src={pencil} alt="pencil"/>
+                ? <img src={pencil} alt="pencil" />
                 : userPhoto
-                ? <img src={pencil} alt="pencil"/>
-                : <p>Add photo</p>
+                  ? <img src={pencil} alt="pencil" />
+                  : <p>Add photo</p>
             }
           </Button>
           <ModalPhoto
@@ -64,13 +64,13 @@ const PersonalInformation = ({
               updatedAboutMe
                 ? <p>{updatedAboutMe}</p>
                 : aboutMe
-                ? <p>{aboutMe}</p>
-                : <p></p>
+                  ? <p>{aboutMe}</p>
+                  : <p></p>
             }
           </div>
-          <button id="about-pencil" onClick={openModalAbout}><img src={pencil} alt="pencil"/></button>
+          <button id="about-pencil" onClick={openModalAbout}><img src={pencil} alt="pencil" /></button>
           <ModalAboutMe
-            token={token}
+            token={token} // do we have to pass this token to all components?? this can not be right
             isOpen={stateModalAbout}
             openModal={openModalAbout}
           />

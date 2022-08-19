@@ -2,13 +2,10 @@ import {createStore, combineReducers, compose, applyMiddleware} from 'redux'
 import thunk from 'redux-thunk'
 
 import loginReducer, { restoreSessionAction, restoreDataUserIntoLocalStorage, restoreDataLanguageIntoLocalStorage, restoreUpdatedDataLanguageIntoLocalStorage } from './loginDucks'
-import groupReducer, { getDataGroupsAction } from './groupsDucks'
-import { restoreDataGroupIntoStorage } from './groupsDucks'
 
 
 const rootReducer = combineReducers({
     dataLogin: loginReducer,
-    groups: groupReducer
 })
 
 
@@ -22,8 +19,6 @@ export default function generateStore() {
     restoreDataUserIntoLocalStorage()(store.dispatch)
     restoreSessionAction()(store.dispatch)
     restoreDataLanguageIntoLocalStorage()(store.dispatch)
-    restoreDataGroupIntoStorage()(store.dispatch)
-    // getDataGroupsAction()(store.dispatch)
     // restoreUpdatedDataLanguageIntoLocalStorage()(store.dispatch)
     return store;
 }

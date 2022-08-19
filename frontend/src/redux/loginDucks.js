@@ -1,5 +1,12 @@
 import axios from "axios"
 
+/**
+ * Ducks pattern: just a single file that includes all the action types, action creators and reducer
+ * 
+ * (i) These can all be leveraged with the redux-toolkit 
+ * 
+ * Notes: this file has operations to login, languages, user information, pretty much everything! its a mess! To improve: separate concerns
+ */
 
 //const
 const initialState = {
@@ -94,16 +101,7 @@ export default reducer
 
 
 //aux
-
-export const searchingLanguage = (array, id) => {
-    let result = array.filter(item => {
-        return item.id === id
-    })
-
-    const totalRes = result.map(item => item.name)
-
-    return totalRes
-}
+// I dont think this is the place to put some random aux stuff
 
 export const saveStorage = (storage) => {
     localStorage.storage = JSON.stringify(storage)
@@ -185,7 +183,7 @@ export const logoutAction = (token) => async (dispatch) => {
                 "Authorization": `token ${token}`,
             },
         }
-        axios.post(`${API}/api/v1/logout/`, null, config)
+        axios.post(`${API}/v1/logout/`, null, config)
             .then(res => {
                 resolve(res.data)
                 dispatch({
@@ -218,7 +216,7 @@ export const sendUpdatedLanguages = (token, idLanguage) => async (dispatch) => {
                 "Authorization": `token ${token}`,
             },
             method: 'PUT',
-            url: `${API}/api/v1.1/user/`,
+            url: `${API}/v1.1/user/`,
             data: bodyFormData
         })
             .then(res => {
@@ -248,7 +246,7 @@ export const sendDataLoginAction = (bodyFormData) => async (dispatch) => {
     const ultimateData = await new Promise((resolve, reject) => {
         axios({
             method: 'POST',
-            url: `${API}/api/v1/login/`,
+            url: `${API}/v1/login/`,
             data: bodyFormData,
         })
             .then(res => {
@@ -280,7 +278,7 @@ export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
     const totalData = await new Promise((DataReturn, errorReturn) => {
         axios({
             method: 'POST',
-            url: `${API}/api/v1/register/`,
+            url: `${API}/v1/register/`,
             data: bodyData
         })
             .then(res => {
@@ -292,6 +290,7 @@ export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
             })
             .catch(error => {
                 console.log(error)
+                console.log(error.response.data);
                 errorReturn(error)
             })
     })
@@ -312,7 +311,7 @@ export const sendProfilePhotoAction = (bodyFormData, token) => async (dispatch) 
                 "Authorization": `token ${token}`,
             },
             method: 'PUT',
-            url: `${API}/api/v1.1/user/`,
+            url: `${API}/v1.1/user/`,
             data: bodyFormData
         })
             .then(res => {
@@ -341,7 +340,7 @@ export const getDataLanguages = (token) => async (dispatch) => {
                 "Authorization": `token ${token}`,
             },
         }
-        axios.get(`${API}/api/v1/users/languages/`, config)
+        axios.get(`${API}/v1/users/languages/`, config)
             .then(res => {
                 returnData(res.data)
                 dispatch({
@@ -369,7 +368,7 @@ export const sendAnyUserData = (userFormData, token) => async (dispatch) => {
                 "Authorization": `token ${token}`,
             },
         }
-        axios.put(`${API}/api/v1.1/user/`, userFormData, config)
+        axios.put(`${API}/v1.1/user/`, userFormData, config)
             .then(res => {
                 returnData(res)
                 dispatch({
@@ -395,7 +394,7 @@ export const getUserDataAction = (token) => (dispatch) => {
             "Authorization": `token ${token}`,
         },
     }
-    axios.get(`${API}/api/v1.1/user/`, config)
+    axios.get(`${API}/v1.1/user/`, config)
         .then(res => {
             dispatch({
                 type: GET_USER,
