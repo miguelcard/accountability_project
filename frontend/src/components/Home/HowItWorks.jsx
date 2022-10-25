@@ -1,5 +1,5 @@
 import React from 'react'
-import '../../assets/styles/components/Home/howItsWorks.css'
+import '../../assets/styles/components/Home/howItWorks.css'
 import imagePlan from '../../assets/statics/images/NumberHeading.png'
 import imageTrack from '../../assets/statics/images/NumberHeading2.png'
 import imageAdjust from '../../assets/statics/images/NumberHeading3.png'

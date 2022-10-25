@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import {connect, useDispatch} from 'react-redux'
 import { useHistory } from "react-router-dom";
 import { logoutAction } from '../../redux/loginDucks'
-import FooterHome from '../Home/FooterHome';
 import HeaderProfile from './HeaderProfile';
 import '../../assets/styles/components/Profile/index.css'
 import profilePhoto from '../../assets/statics/images/Group2334.png'
@@ -56,9 +55,6 @@ function Profile({ user, userUpdate, logoutAction, fetching }) {
           openModalAbout={openModalAbout}
           fetching={fetching}
         />
-      </div>
-      <div className="footer">
-        <FooterHome />
       </div>
     </>
   );

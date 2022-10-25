@@ -4,11 +4,6 @@ import { useHistory } from "react-router-dom";
 
 import Header from '../Header/Header'
 import '../../assets/styles/components/Home/index.css'
-import '../../assets/styles/components/Home/responsiveDesing.css'
-import logoCircle2 from '../../assets/statics/images/TurquoiseCircle.png'
-import logoCircle1 from '../../assets/statics/images/OrangeCircle.png'
-import HowItWorks from './HowItWorks';
-import FooterHome from './FooterHome';
 
 const Home = () => {
 
@@ -34,27 +29,22 @@ const Home = () => {
                             <div className="signIn">
                                 <p>Or, just <Link to="/login" className="link-signin">SignIn</Link></p>
                             </div>
-                            <img src={logoCircle1} alt="cirlce1"/>
                         </div>
                         <div className="logo-info">
-                            <img src={logoCircle2} alt="circle2"/>
                         </div>
                     </div>
                 </div>
-                <div className="how-its-work">
-                    <div className="all-content-work">
+                {/*  How it works and Frequently asked questions are just nice to have things at the end */}
+                {/* <div> */}
+                    {/* this is a "nice" component but lets just leave it out for now */}
+                    {/* <div className="all-content-work">
                         <HowItWorks/>
                     </div>
-                </div>
-                {/* <div className="getApartner">
-                    <img src={imageHuman} alt="imageHuman"/>
                 </div> */}
                 {/* <div className="asked-questions">
                     <FrequentlyAsked/>
                 </div> */}
-                <div className="footer">
-                    <FooterHome/>
-                </div>
+                {/* FooterHome would go here */}
             </div>
         </>
     )

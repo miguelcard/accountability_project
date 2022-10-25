@@ -7,9 +7,6 @@
 
 .personal-information {
     /* background: yellow; */
-    background: url('../../../statics/images/PurpleCircle.png') no-repeat 45vh 28vh/95px 95px,
-                url('../../../statics/images/OrangeCircle.png') no-repeat 25vh 50vh/50px 50px,
-                url('../../../statics/images/TurquoiseCircle.png') no-repeat 45vh 68vh/50px 50px;
 
     min-height: 100vh;
     display: flex;
@@ -217,7 +214,7 @@
 
 .your-score {
     /* background: steelblue; */
-    background: url('../../../statics/images/super-boss-2194245-0.png') no-repeat 100vh 0/160vh 120vh;
+    /* background: url('../../../statics/images/super-boss-2194245-0.png') no-repeat 100vh 0/160vh 120vh; */
     height: 110vh;
     display: flex;
     flex-direction: column;

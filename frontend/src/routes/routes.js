@@ -1,5 +1,5 @@
 import React from 'react'
-import { Redirect, Route, Switch } from 'react-router'
+import { Redirect, Route, Switch } from 'react-router-dom'
 import { isAuthentication } from '../data/auth/authentication'
 import { PrivateRoute, PublicRoute } from './helperRoutes'
 import HomeView from '../views/homeView'

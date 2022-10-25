@@ -27,9 +27,6 @@
 
 .dashboard-col-2 {
     /* background: tomato; */
-    background: url('../../../statics/images/PurpleCircle.png') no-repeat 17% 3vh/90px 90px,
-                url('../../../statics/images/OrangeCircle.png') no-repeat 22vh 18vh/50px 50px,
-                url('../../../statics/images/TurquoiseCircle.png') no-repeat 33vh 40vh/50px 50px;
     height: 60vh;
     display: flex;
     flex-direction: column;

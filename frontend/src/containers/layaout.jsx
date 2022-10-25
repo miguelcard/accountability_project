@@ -1,5 +1,4 @@
 import React from 'react'
-import FooterHome from '../components/Home/FooterHome'
 import HeaderProfile from '../components/Profile/headerProfile'
 
 const Layaout = ({ children }) => {
@@ -8,7 +7,7 @@ const Layaout = ({ children }) => {
             <HeaderProfile />
             {children}
             {/* the space between these 2 is quite badly formatted */}
-            <FooterHome />
+            {/* FooterComponent would go here */}
         </div>
     )
 }
