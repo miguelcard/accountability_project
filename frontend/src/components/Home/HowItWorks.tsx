@@ -7,7 +7,7 @@ import imageRinse from '../../assets/statics/images/NumberHeading4.png'
 
 
 
-const HowItWorks = () => {
+const HowItWorks: React.FC = () => {
     return (
         <div className="all-wraper">
             <div className="firt-content">

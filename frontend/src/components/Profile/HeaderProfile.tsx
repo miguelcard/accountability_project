@@ -11,7 +11,7 @@ import {
 import logotype from '../../assets/statics/images/logotype.png'
 import '../../assets/styles/components/Profile/headerProfile.css'
 
-const HeaderProfile = (props) => {              // this name "Header Profile" is not intuitive at all, this is just a header when the user is logged in, it would also not belong to this profile folder
+const HeaderProfile: React.FC<any> = (props) => {              // this name "Header Profile" is not intuitive at all, this is just a header when the user is logged in, it would also not belong to this profile folder
     const [isOpen, setIsOpen] = useState(false);
 
     const toggle = () => setIsOpen(!isOpen);

@@ -3,8 +3,10 @@ import { connect } from 'react-redux'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, FormGroup, Label, Input } from 'reactstrap'
 import { getUserDataAction, sendAnyUserData } from '../../redux/loginDucks';
 
+// define an interface for the props comming in, and relplace the "any" below for TS
 
-const ModalAboutMe = ({ token, openModal, isOpen, getUserDataAction, sendAnyUserData }) => {
+// const ModalAboutMe: React.FC<any> = ({ token, openModal, isOpen, getUserDataAction, sendAnyUserData }) => {
+    const ModalAboutMe = ({ token, openModal, isOpen, getUserDataAction, sendAnyUserData }) => {
 
     const [stateText, setStateText] = useState(null);
 

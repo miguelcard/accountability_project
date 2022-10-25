@@ -1,5 +1,5 @@
 export const isAuthentication = () => {
-    let store =  localStorage.getItem('storage')
+    let store =  localStorage.getItem('storage');
     store = JSON.parse(store)
 
     if (store === null) {
