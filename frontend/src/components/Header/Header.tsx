@@ -14,7 +14,7 @@ import '../../assets/styles/components/Header/headerStyle.css'
 import Button from '@mui/material/Button';
 
 
-const Header = (props) => {
+const Header: React.FC = () => {
 
     return <Button variant="contained">Hello World</Button>;
 

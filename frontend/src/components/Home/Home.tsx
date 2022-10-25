@@ -5,7 +5,7 @@ import { useHistory } from "react-router-dom";
 import Header from '../Header/Header'
 import '../../assets/styles/components/Home/index.css'
 
-const Home = () => {
+const Home: React.FC = () => {
 
     let history = useHistory();
 

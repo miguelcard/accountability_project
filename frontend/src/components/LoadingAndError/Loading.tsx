@@ -1,5 +1,6 @@
 import React from 'react'
 
+// this loading file looks innecessary, delete when possible
 const Loading = () => {
     return (
         <div>

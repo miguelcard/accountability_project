@@ -8,10 +8,7 @@ import logotype from '../../assets/statics/images/logotype.png'
 import '../../assets/styles/components/Login/headerLoginStyle.css'
 
 
-
-
-
-const HeaderLogin = (props) => {
+const HeaderLogin: React.FC = () => {
   
     return (
       <>
