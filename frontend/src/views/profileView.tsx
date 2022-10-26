@@ -1,7 +1,7 @@
 import React from 'react'
 import Profile from '../components/Profile/Profile'
 
-const ProfileView = () => {
+const ProfileView: React.FC = () => {
     return (
         <div>
             <Profile/>

@@ -6,7 +6,7 @@ import line from '../assets/statics/images/line.png'
 import line2 from '../assets/statics/images/line2.png'
 import logoDown from '../assets/statics/images/problem-solving-2194252-0.png'
 
-const LoginView = () => {
+const LoginView:React.FC = () => {
     return (
         <>
             <div className="header-login">

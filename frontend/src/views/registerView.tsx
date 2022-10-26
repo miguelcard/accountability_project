@@ -7,10 +7,7 @@ import logoDown from '../assets/statics/images/girl-doing-yoga-2194219-0.png'
 import '../assets/styles/components/register/index.css'
 
 
-
-
-
-const RegisterView = () => {
+const RegisterView: React.FC = () => {
     return (
         <>
             <div className="header-login">
