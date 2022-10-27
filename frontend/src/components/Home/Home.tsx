@@ -2,7 +2,7 @@ import React from 'react'
 import {Link} from 'react-router-dom'
 import { useHistory } from "react-router-dom";
 
-import Header from '../Header/Header'
+import LandingHeader from '../Header/LandingHeader'
 import '../../assets/styles/components/Home/index.css'
 
 const Home: React.FC = () => {
@@ -17,7 +17,7 @@ const Home: React.FC = () => {
         <>
             <div className="content-main">
                 <div className="content-Header">
-                    <Header/>
+                    <LandingHeader/>
                     <div className="container-header">
                         <div className="info">
                             <div className="tittle">
