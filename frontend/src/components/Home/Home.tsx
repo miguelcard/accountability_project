@@ -2,8 +2,7 @@ import React from 'react'
 import {Link} from 'react-router-dom'
 import { useHistory } from "react-router-dom";
 
-import LandingHeader from '../Header/LandingHeader'
-import '../../assets/styles/components/Home/index.css'
+import LandingNavMenu from '../Headers/LandingNavbar'
 
 const Home: React.FC = () => {
 
@@ -17,7 +16,7 @@ const Home: React.FC = () => {
         <>
             <div className="content-main">
                 <div className="content-Header">
-                    <LandingHeader/>
+                    <LandingNavMenu/>
                     <div className="container-header">
                         <div className="info">
                             <div className="tittle">
