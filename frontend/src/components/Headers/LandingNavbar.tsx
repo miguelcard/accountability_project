@@ -73,7 +73,7 @@ const LandingNavMenu: React.FC = () => {
 
     return (
         <>
-            <AppBar position="static" elevation={0} className='landing-header' >
+            <AppBar position="sticky" elevation={0} className='landing-header' >
                 <Container maxWidth="xl" >
                     <Toolbar>
                         {/*

@@ -1,0 +1,28 @@
+/* Hero section styles */
+
+.hero__primary-text {
+    font-family: 'Euclid Circular B';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 3.5em;
+    line-height: 64px;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+}
+
+.hero__secondary-text {
+    font-family: 'Euclid Circular B';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1.25em;
+    line-height: 29px;
+    color: #FFFFFF;
+}
+
+.hero__image {
+    width: 400px;
+}
+
+/* h1.error {} which would only apply to <h1 class="error"> */
+/* #foo {} will style the single element declared with an attribute id="foo", just one element!
+.foo {} will style all elements with an attribute class="foo" (you can have multiple classes assigned to an element too, just separate them with spaces, e.g. class="foo bar") */

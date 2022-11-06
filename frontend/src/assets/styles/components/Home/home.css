@@ -1,0 +1,5 @@
+/* maybe you dont need this file at all? */
+
+/* h1.error {} which would only apply to <h1 class="error"> */
+/* #foo {} will style the single element declared with an attribute id="foo", just one element!
+.foo {} will style all elements with an attribute class="foo" (you can have multiple classes assigned to an element too, just separate them with spaces, e.g. class="foo bar") */

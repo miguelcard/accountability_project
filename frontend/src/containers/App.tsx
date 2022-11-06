@@ -1,4 +1,3 @@
-import '../assets/styles/container/App.css';
 import { Provider } from 'react-redux'
 
 import generateStore from '../redux/store'
@@ -19,9 +18,9 @@ function App() {
   return (
     <Provider store={store}>
       <StyledEngineProvider injectFirst>
-      <CacheProvider value={cache}>
-          <Routes/>
-      </CacheProvider>
+        <CacheProvider value={cache}>
+          <Routes />
+        </CacheProvider>
       </StyledEngineProvider>
     </Provider>
   );
