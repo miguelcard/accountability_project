@@ -34,7 +34,7 @@ interface LinkButtons {
  * Resposive landing page navigation menu (top menu / navbar) thet the user first sees if he is not authenticated 
  * @returns landing page navigation menu
  */
-const LandingNavMenu: React.FC = () => {
+const LandingNavbar: React.FC = () => {
 
     // Definition of NavBar pages and their links
     const navbarPages: LinkButtons = {
@@ -73,7 +73,8 @@ const LandingNavMenu: React.FC = () => {
 
     return (
         <>
-            <AppBar position="sticky" elevation={0} className='landing-header' >
+             {/* use sticky navigation on (Desktop view mainly) when home page gets bigger <AppBar position="sticky" */}
+            <AppBar position="static" elevation={0} className='landing-header' >
                 <Container maxWidth="xl" >
                     <Toolbar>
                         {/*
@@ -233,4 +234,4 @@ const LandingNavMenu: React.FC = () => {
     );
 }
 
-export default LandingNavMenu
+export default LandingNavbar

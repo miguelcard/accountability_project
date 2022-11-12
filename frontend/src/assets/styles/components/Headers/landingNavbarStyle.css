@@ -2,6 +2,7 @@
 
 .landing-header {
     background: #84CEC1;
+    /* background: none; */
     padding: 8px; /* essentily same as sx={{ p: 1 }} */
 }
 

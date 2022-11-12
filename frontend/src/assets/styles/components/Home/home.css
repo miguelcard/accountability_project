@@ -1,4 +1,27 @@
-/* maybe you dont need this file at all? */
+/* Home / Landing page styles */
+
+img.home__blob {
+    position: absolute;
+    width: 900px;
+    height: auto;
+    vertical-align: top;
+    top: 280px;
+    /* z-index: 0; */
+
+    /* this is what keeps the position of the image centered at all screen sizes */
+    left: calc(50vw + -1000px);
+}
+
+div.home__hero-header {
+    background-color: #84CEC1;
+}
+
+
+
+/* Temporary just to fill the whole backround color of the body ... in future I imagine each div in the homepage will have its own backround color and so on */
+body {
+    background-color: #84CEC1;
+}
 
 /* h1.error {} which would only apply to <h1 class="error"> */
 /* #foo {} will style the single element declared with an attribute id="foo", just one element!

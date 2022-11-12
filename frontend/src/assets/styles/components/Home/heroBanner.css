@@ -1,28 +1,85 @@
 /* Hero section styles */
 
+.hero__container {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
 .hero__primary-text {
     font-family: 'Euclid Circular B';
     font-style: normal;
     font-weight: 600;
-    font-size: 3.5em;
+    font-size: 3.4em;
     line-height: 64px;
     letter-spacing: -0.02em;
     color: #FFFFFF;
+
+    /* Override Margins set by default by MUI */
+    margin-block-start: 0;
+    margin-block-end: 0;
 }
 
 .hero__secondary-text {
     font-family: 'Euclid Circular B';
     font-style: normal;
     font-weight: 500;
-    font-size: 1.25em;
+    font-size: 1.2em;
     line-height: 29px;
     color: #FFFFFF;
+
+    /* Override Margins set by default by MUI */
+    margin-block-start: 0;
+    margin-block-end: 0;
+}
+
+.hero__primary-button {
+    /* button properties */
+    padding: 12px 25px;
+    background: #958FFF;
+    border-radius: 12px;
+    box-shadow: 0px 8px 15px rgba(61, 0, 217, 0.162);
+    transition: all 0.3s ease 0s;
+
+    /* font properties */
+    font-family: 'Euclid Circular A';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 1.1em;
+    color: #FFFFFF;
+    text-transform: capitalize;
+}
+
+.hero__primary-button:hover {
+    /* background: #a39eff; */
+    background: #655dff;
+    color: #FFFFFF;
+    box-shadow: 0px 15px 20px rgba(61, 0, 217, 0.31);
+    transform: translateY(-7px);
+}
+
+
+div.hero__text-and-button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 36px;
+    position: relative;
+
+    /* just to put text in front of the hero image*/
+    z-index: 1;
+}
+
+div.hero__text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 21px;
 }
 
 .hero__image {
-    width: 400px;
-}
+    width: 300px;
 
-/* h1.error {} which would only apply to <h1 class="error"> */
-/* #foo {} will style the single element declared with an attribute id="foo", just one element!
-.foo {} will style all elements with an attribute class="foo" (you can have multiple classes assigned to an element too, just separate them with spaces, e.g. class="foo bar") */
+    /* just to put the image on top of home blob */
+    position: relative;
+    /* z-index: 0; */
+}
