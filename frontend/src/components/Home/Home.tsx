@@ -5,18 +5,20 @@ import '../../assets/styles/components/Home/home.css';
 import LandingNavbar from '../Headers/LandingNavbar'
 import HeroBanner from './HeroBanner'
 
-// import 'bootstrap/dist/css/bootstrap.min.css'; // TODO: TO DELETE, check weird spacing in navbar when this is deleted!
-
+/**
+ * Landing Page for unauthenticated users
+ * @returns 
+ */
 const Home: React.FC = () => {
 
     return (
         <>
             {/* put all body inside a grid?? ... for now not needed ...*/}
             <LandingNavbar />
+            <img src={blob} alt="blob" className='home__blob' />
             <Box className='home__hero-header' >
                 <HeroBanner />
             </Box>
-            <img src={blob} alt="blob" className='home__blob' />
 
 
 
