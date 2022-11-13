@@ -72,9 +72,9 @@ div.hero__text-container--xs {
     margin-block-end: 0;
 }
 
-.hero__secondary-text--xs {
+/* .hero__secondary-text--xs { */
     /* Ovirrede text styles when screen xs or smaller */
-}
+/* } */
 
 .hero__primary-button {
     /* button properties */
