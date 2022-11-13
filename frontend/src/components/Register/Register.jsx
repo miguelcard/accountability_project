@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { useHistory, Link } from "react-router-dom";
 import * as ReactBootStrap from 'react-bootstrap'
 import { sendDataRegisterAction } from '../../redux/loginDucks'
-import '../../assets/styles/components/register/register.css'
+import '../../assets/styles/components/Register/register.css'
 
 
 

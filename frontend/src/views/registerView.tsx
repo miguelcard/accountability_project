@@ -4,7 +4,7 @@ import line from '../assets/statics/images/line.png'
 import line2 from '../assets/statics/images/line2.png'
 import Register from '../components/Register/Register'
 import logoDown from '../assets/statics/images/girl-doing-yoga-2194219-0.png'
-import '../assets/styles/components/register/index.css'
+import '../assets/styles/components/Register/index.css'
 
 
 const RegisterView: React.FC = () => {
