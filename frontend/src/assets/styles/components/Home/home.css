@@ -20,5 +20,5 @@ div.home__hero-header {
 
 /* Temporary just to fill the whole backround color of the body ... in future I imagine each div in the homepage will have its own backround color and so on */
 body {
-    background-color: #84CEC1;
+    /* background-color: #84CEC1; */
 }

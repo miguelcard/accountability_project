@@ -10,6 +10,7 @@ import '../../assets/styles/components/Register/register.css'
 
 function Register({ sendDataRegisterAction }) {
 
+    // are these states necessary?? probably yes, to save the form data / track its state before sending it
     const history = useHistory()
     const [userName, setUserName] = useState(null);
     const [email, setEmail] = useState(null);
@@ -29,6 +30,7 @@ function Register({ sendDataRegisterAction }) {
 
         const res = await sendDataRegisterAction(bodyFormData)
         if (res.status === 200) {
+            // is this the right way to reditect?
             history.push('/profile')
         }
     }

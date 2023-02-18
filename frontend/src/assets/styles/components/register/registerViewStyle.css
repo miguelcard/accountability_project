@@ -1,5 +1,51 @@
-.wraper-register {
-    /* background: turquoise; */
+.register__action-text {
+    font-family: 'Euclid Circular B';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 2em;
+    line-height: 64px;
+    letter-spacing: -0.02em;
+    color: #000000;
+
+    /* Override Margins set by default by MUI */
+    margin-block-start: 0;
+    margin-block-end: 0;
+}
+
+/* this overrides the given styles for all child classes of this class recursively */
+/* this was done to override the defaul MUI TextField outlined color when focused */
+.register__text-input:focus-within * {
+    border-color: #84CEC1 !important;
+}
+
+.register__form-button {
+    /* button properties */
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+
+    /* font properties */
+    font-family: 'Euclid Circular A';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 1.1em;
+    background: #5249ff;
+    color: #FFFFFF;
+    text-transform: capitalize;
+}
+
+.register__form-button:hover {
+    background: #756eff;
+    color: #FFFFFF;
+}
+
+
+
+
+/* old css:  */
+
+/* .wraper-register {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.41) 0%, rgba(115, 82, 255, 0.29) 100%);
     height: 130vh;
     display: flex;
@@ -9,7 +55,6 @@
 }
 
 .container-register {
-    /* background: wheat; */
     width: 90%;
     height: 95%;
     display: flex;
@@ -19,7 +64,6 @@
 }
 
 .tittle-register {
-    /* background: springgreen; */
     width: 80%;
     display: flex;
     flex-direction: column;
@@ -59,7 +103,6 @@
 }
 
 .stn-1 h2 {
-    /* background: tomato; */
     width: 58%;
     font-family: Inter;
     font-weight: 500;
@@ -72,10 +115,9 @@
     margin-right: 30%;
     width: 28%;
     margin-top: 10px;
-}
+} */
 
-.stn-1 p {
-    /* background: wheat; */
+/* .stn-1 p {
     width: 70%;
     font-family: Inter;
     font-weight: normal;
@@ -85,9 +127,9 @@
     color: #fff;
     margin-top: 8vh;
     margin-left: 10%;
-}
+} */
 
-.stn-1 button {
+/* .stn-1 button {
     background: transparent;
     width: 44%;
     margin-top: 3vh;
@@ -128,4 +170,6 @@
     margin-left: 33%;
     margin-top: 8px;
     margin-bottom: 5vh;
-}
+} */
+
+/* end of old css */
