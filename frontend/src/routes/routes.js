@@ -18,6 +18,7 @@ const Routes = () => {
             <PublicRoute exact path="/register" component={RegisterView}/>
             <PrivateRoute exact path="/profile" component={ProfileView}/>
             {/* layout just has the header and the footer and in between renders any component you put */}
+            {/* does this even belong here???? */}
             {/* <Layaout> */}
                 {/* <PrivateRoute exact path="/dashboard" component={Dashboard}/> */}
             {/* </Layaout> */}

@@ -20,7 +20,7 @@ const Home: React.FC = () => {
                 <HeroBanner />
             </Box>
             
-            {/* FooterHome would go here   or do layouts? */}
+            {/* FooterHome would go here or do layouts? */}
         </>
     )
 }

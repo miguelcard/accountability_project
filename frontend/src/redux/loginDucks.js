@@ -5,7 +5,7 @@ import axios from "axios"
  * 
  * (i) These can all be leveraged with the redux-toolkit 
  * 
- * Notes: this file has operations to login, languages, user information, pretty much everything! its a mess! To improve: separate concerns
+ * NOTES : this file has operations to login, languages, user information, pretty much everything! its a mess! To improve: separate concerns
  */
 
 //const
