@@ -55,8 +55,6 @@ class LoginSerializer(serializers.Serializer):
         email = attrs.get('email')
         password = attrs.get('password')
 
-        print('email: ', email, ' password: ', password)
-
         if not email or not password:
             msg = ('Please provide both email and password')
             raise serializers.ValidationError(msg, code='authorization')
