@@ -3,6 +3,7 @@ import Profile from '../components/Profile/Profile'
 
 const ProfileView: React.FC = () => {
     return (
+        // What the FUCK is this wrapping for??
         <div>
             <Profile/>
         </div>

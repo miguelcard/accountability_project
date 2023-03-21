@@ -12,10 +12,10 @@ import Typography from '@mui/material/Typography';
 
 
 interface Props {
-    actionMessage: string,
-    buttonLinkTo: string,
-    buttonKey: string,
-    buttonText: string,
+    actionMessage?: string,
+    buttonLinkTo?: string,
+    buttonKey?: string,
+    buttonText?: string,
 }
 
 export const RegisterNavbar: React.FC<Props> = (child) => {
@@ -37,21 +37,31 @@ export const RegisterNavbar: React.FC<Props> = (child) => {
                             sx={{ display: { xs: 'flex', md: 'flex' }, my: 2 }}
                         >
 
-                            <Typography className='register-header__action-text' sx={{ my: 2, display: { xs: 'none', sm: 'none', md: 'flex' }, fontSize: '1em' }}>
-                                {child.actionMessage}
-                            </Typography>
-                            <Typography className='register-header__action-text' sx={{ my: 2, display: { xs: 'none', sm: 'flex', md: 'none' }, fontSize: '0.8em' }}>
-                                {child.actionMessage}
-                            </Typography>
+                            {child.actionMessage ? (
+                                <>
+                                    <Typography className='register-header__action-text' sx={{ my: 2, display: { xs: 'none', sm: 'none', md: 'flex' }, fontSize: '1em' }}>
+                                        {child.actionMessage}
+                                    </Typography>
+                                    <Typography className='register-header__action-text' sx={{ my: 2, display: { xs: 'none', sm: 'flex', md: 'none' }, fontSize: '0.8em' }}>
+                                        {child.actionMessage}
+                                    </Typography>
+                                </>
+                            ) : (
+                                null
+                            )}
 
-                            <Button
-                                className='register-header__action-elements__button--primary'
-                                component={RouterLink}
-                                to={child.buttonLinkTo}
-                                key={child.buttonKey}
-                            >
-                                {child.buttonText}
-                            </Button>
+                            {(child.buttonKey && child.buttonLinkTo && child.buttonText) ? (
+                                <Button
+                                    className='register-header__action-elements__button--primary'
+                                    component={RouterLink}
+                                    to={child.buttonLinkTo}
+                                    key={child.buttonKey}
+                                >
+                                    {child.buttonText}
+                                </Button>
+                            ) : (
+                                null
+                            )}
                         </Box>
                     </Toolbar>
                 </Container>

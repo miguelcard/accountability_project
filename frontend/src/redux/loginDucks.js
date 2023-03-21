@@ -124,8 +124,7 @@ const saveAnyThingInLocalStorage = (str, item) => {
 export const restoreSessionAction = () => dispatch => {
     let store = localStorage.getItem('storage')
     //convert to object
-    store = JSON.parse(store)
-    if (store && store.authentication.token) {
+    if (store && store.authentication && store.authentication.token) {
         dispatch({
             type: GET_LOGIN_SUCCESS,
             payload: store
@@ -268,6 +267,7 @@ export const sendDataLoginAction = (bodyFormData) => async (dispatch) => {
 }
 
 
+// THIS IS THE REGISTER ENDPOINT NOT THE LOGIN ENDPOINT, SHOULD NOT BELONG IN THIS FILE
 
 export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
 

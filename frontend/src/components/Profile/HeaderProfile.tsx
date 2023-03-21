@@ -3,7 +3,7 @@ import {
     Collapse,
     Navbar,
     NavbarToggler,
-    NavbarBrand,
+    NavbarBrand,  // really? "Brand"? this is called LOGO 
     Nav,
     NavItem,
     NavLink,
