@@ -114,7 +114,6 @@
 
 .sidebar__logo {
     width: 120px;
-    filter: invert(100%);
 }
 
 .sidebar__menu__item {
