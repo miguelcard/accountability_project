@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from Models.users.models import User, Tag, Language
 from datetime import date
+from django.contrib.auth import authenticate
 
 class RegisterSerializer(serializers.ModelSerializer):
     #This password2 doesnt exist in the model itself but it has to be passed at registration, thats why we create it manually
@@ -9,14 +10,19 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'id', 'username', 'email', 'password', 'password2'
+            'id', 'name', 'username', 'email', 'password', 'password2'
         )
         extra_kwargs = {
             'password': {'write_only': True}
         }
 
+    # def validate(self, attrs):
+    #     # here you can add the custpm validations like if the usersemail or username already exist and so on. see: https://www.youtube.com/watch?v=6d0fiPj0dsA 6:00
+    #     # or would this validation go on UserSerializer ?
+    #     pass
+
     def create(self, validated_data):
-        user = User(email=self.validated_data['email'], username=self.validated_data['username'])
+        user = User(email=self.validated_data['email'], username=self.validated_data['username'], name=self.validated_data['name'])
         password = validated_data['password']
         password2 =validated_data['password2']
 
@@ -26,6 +32,45 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password) 
         user.save()
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+
+    email = serializers.CharField(
+        label= ("Email"),
+        write_only=True
+    )
+    password = serializers.CharField(
+        label= ("Password"),
+        style={'input_type': 'password'},
+        trim_whitespace=False,
+        write_only=True
+    )
+    token = serializers.CharField(
+        label= ("Token"),
+        read_only=True
+    )
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if not email or not password:
+            msg = ('Please provide both email and password')
+            raise serializers.ValidationError(msg, code='authorization')
+
+        if not User.objects.filter(email=email).exists():
+            msg = ('Email does not exist.')
+            raise serializers.ValidationError(msg, code='authorization')
+        
+        user = authenticate(request=self.context.get('request'),
+                                email=email, password=password)
+        if not user:
+            msg = ('Wrong credentials')
+            raise serializers.ValidationError(msg, code='authorization')
+        
+        attrs['user'] = user
+        return attrs
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:

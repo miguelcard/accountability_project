@@ -40,30 +40,33 @@ export default reducer
 
 //actions
 
-export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
 
-    dispatch({
-        type: RUNNING
-    })
+// WHAT THE FUCK IS THISSSS; THIS IS NOT THE REGISTER ENDPOINT!!!!!! and is being used no-where
+// the register enpoint is defined in the "loginDucks" !! WTFFFF is it doing there!!!!!!!!!!!
+// export const sendDataRegisterAction = (bodyData) => async (dispatch) => {
 
-    const totalData = await new Promise((DataReturn, errorReturn) => {
-        axios({
-            method: 'POST',
-            url: `${API}/users/user/`,
-            headers: { "Content-Type": "application/json" },
-            data: bodyData
-        })
-        .then(res => {
-            DataReturn(res.status)
-            dispatch({
-                type: GET_SUCCESS_REGISTER,
-                payload: res.data
-            })
-        })
-        .catch(error => {
-            console.log(error.response.data.message)
-            errorReturn(error.response.data.message)
-        })
-    })
-    return totalData
-}
+//     dispatch({
+//         type: RUNNING
+//     })
+
+//     const totalData = await new Promise((DataReturn, errorReturn) => {
+//         axios({
+//             method: 'POST',
+//             url: `${API}/users/user/`,
+//             headers: { "Content-Type": "application/json" },
+//             data: bodyData
+//         })
+//         .then(res => {
+//             DataReturn(res.status)
+//             dispatch({
+//                 type: GET_SUCCESS_REGISTER,
+//                 payload: res.data
+//             })
+//         })
+//         .catch(error => {
+//             console.log(error.response.data.message)
+//             errorReturn(error.response.data.message)
+//         })
+//     })
+//     return totalData
+// }
