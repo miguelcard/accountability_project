@@ -21,12 +21,14 @@ const Home: React.FC = () => {
             </Box>
 
             {/* Below is jsut a temp solution to extend the colot of the above box and add the copyright text */}
-            <Box sx={{ 
+            <Box sx={{
                 display: "flex",
-                alignItems: "flex-end", 
+                alignItems: "flex-end",
                 justifyContent: "center",
-                height: '245px', 
-                backgroundColor: '#84CEC1' }}>
+                height: '245px',
+                backgroundColor: '#84CEC1'
+            }}
+            >
                 <span
                     style={{
                         color: "#FFFFFF",
