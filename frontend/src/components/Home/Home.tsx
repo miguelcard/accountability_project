@@ -19,7 +19,25 @@ const Home: React.FC = () => {
             <Box className='home__hero-header' >
                 <HeroBanner />
             </Box>
-            
+
+            {/* Below is jsut a temp solution to extend the colot of the above box and add the copyright text */}
+            <Box sx={{ 
+                display: "flex",
+                alignItems: "flex-end", 
+                justifyContent: "center",
+                height: '245px', 
+                backgroundColor: '#84CEC1' }}>
+                <span
+                    style={{
+                        color: "#FFFFFF",
+                        fontSize: 18,
+                        marginBottom: 45,
+                        textAlign: "center",
+                    }}
+                >a Miguel Cardenas production <br />
+                    AvidHabits &copy; 2023
+                </span>
+            </Box>
             {/* FooterHome would go here or do layouts? */}
         </>
     )
