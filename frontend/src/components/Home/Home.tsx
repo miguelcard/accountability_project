@@ -32,7 +32,7 @@ const Home: React.FC = () => {
                 <span
                     style={{
                         color: "#FFFFFF",
-                        fontSize: 18,
+                        fontSize: 16,
                         marginBottom: 45,
                         textAlign: "center",
                     }}
