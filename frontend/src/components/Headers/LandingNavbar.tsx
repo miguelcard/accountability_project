@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import logotype from '../../assets/statics/images/Headers/avidhabits.png'
+import logotypeSecondary from '../../assets/statics/images/Headers/avidhabits-secondary.png'
 import '../../assets/styles/components/Headers/landingNavbarStyle.css'
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -185,7 +186,7 @@ const LandingNavbar: React.FC = () => {
                                 component={RouterLink}
                                 to="/"
                             >
-                                <img src={logotype} alt="logo" className='sidebar__logo' />
+                                <img src={logotypeSecondary} alt="logo" className='sidebar__logo' />
                             </Link>
                             <IconButton
                                 sx={{ float: 'right' }}
