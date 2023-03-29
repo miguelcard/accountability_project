@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
 import {connect, useDispatch} from 'react-redux'
 import { useHistory } from "react-router-dom";
-import { logoutAction } from '../../redux/loginDucks'
-import HeaderProfile from './HeaderProfile';
+import { logoutAction } from '../../redux/loginDucks';
 import '../../assets/styles/components/Profile/index.css'
 import profilePhoto from '../../assets/statics/images/Group2334.png'
 import PersonalInformation from './PersonalInformation';
@@ -39,7 +38,9 @@ function Profile({ user, userUpdate, logoutAction, fetching }) {
   // SHOULNT THE PROFILE PART BE IN THE profileView.jsx file in the views folder?
   return (
     <>
-      <HeaderProfile logout={logout} />
+      {/* <HeaderProfile logout={logout} /> */}
+      <button  onClick={logout}>Logout</button>
+
       <div className="content-profile">
         <PersonalInformation
           token={user.authentication.token}

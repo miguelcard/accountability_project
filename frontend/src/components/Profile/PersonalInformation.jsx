@@ -1,6 +1,5 @@
 import React from 'react'
 import ModalPhoto from './ModalPhoto';
-import { Button } from 'reactstrap'
 import '../../assets/styles/components/Profile/index.css'
 import pencil from '../../assets/statics/images/pencil.png'
 import ModalAboutMe from './ModalAboutMe';
@@ -42,7 +41,7 @@ const PersonalInformation = ({
             alt="profilePhoto"
             id="photo"
           />
-          <Button onClick={openModal} id="btn-pencil">
+          <button onClick={openModal} id="btn-pencil">
             {
               updatedUserPhoto
                 ? <img src={pencil} alt="pencil" />
@@ -50,7 +49,7 @@ const PersonalInformation = ({
                   ? <img src={pencil} alt="pencil" />
                   : <p>Add photo</p>
             }
-          </Button>
+          </button>
           <ModalPhoto
             token={token}
             isOpen={stateModal}
