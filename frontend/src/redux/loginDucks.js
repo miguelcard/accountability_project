@@ -316,14 +316,6 @@ export const sendProfilePhotoAction = (bodyFormData, token) => async (dispatch) 
         }
 
         axios.patch(`${API}/v1.1/user/`, bodyFormData, config)
-        // axios({
-        //     headers: {
-        //         "Authorization": `token ${token}`,
-        //     },
-        //     method: 'PUT',
-        //     url: `${API}/v1.1/user/`,
-        //     data: bodyFormData
-        // })
             .then(res => {
                 returnData(res)
                 dispatch({
