@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {connect, useDispatch} from 'react-redux'
 import { useHistory } from "react-router-dom";
 import { logoutAction } from '../../redux/loginDucks';
-import '../../assets/styles/components/Profile/index.css'
 import profilePhoto from '../../assets/statics/images/Group2334.png'
 import PersonalInformation from './PersonalInformation';
 
@@ -13,16 +12,6 @@ const TOTAL_LOGOUT_SUCCESS = 'TOTAL_LOGOUT_SUCCESS'
 function Profile({ user, userUpdate, logoutAction, fetching }) {
   const history = useHistory();
   const dispatch = useDispatch();
-  const [stateModal, setStateModal] = useState({ open: false });
-  const [stateModalAbout, setStateModalAbout] = useState({ open: false });
-
-  const openModal = () => {
-    setStateModal({ open: !stateModal.open });
-  };
-
-  const openModalAbout = () => {
-    setStateModalAbout({ open: !stateModalAbout.open });
-  };
 
   const logout = async () => {
     logoutAction(user.authentication.token);
@@ -50,10 +39,6 @@ function Profile({ user, userUpdate, logoutAction, fetching }) {
           aboutMe={user.user.about}
           userPhoto={user.user.profile_photo}
           defaultPhoto={profilePhoto}
-          stateModal={stateModal.open}
-          stateModalAbout={stateModalAbout.open}
-          openModal={openModal}
-          openModalAbout={openModalAbout}
           fetching={fetching}
         />
       </div>
