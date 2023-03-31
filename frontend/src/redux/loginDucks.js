@@ -122,12 +122,14 @@ const saveAnyThingInLocalStorage = (str, item) => {
 //actions for restore storage
 
 export const restoreSessionAction = () => dispatch => {
-    let store = localStorage.getItem('storage')
+    let store = localStorage.getItem('storage');
+
     //convert to object
-    if (store && store.authentication && store.authentication.token) {
+    const userData = JSON.parse(store);
+    if (userData && userData.authentication && userData.authentication.token) {
         dispatch({
             type: GET_LOGIN_SUCCESS,
-            payload: store
+            payload: userData
         })
     }
 }
@@ -306,14 +308,14 @@ export const sendProfilePhotoAction = (bodyFormData, token) => async (dispatch) 
     })
 
     const successData = await new Promise((returnData, returnError) => {
-        axios({
+
+        const config = {
             headers: {
                 "Authorization": `token ${token}`,
             },
-            method: 'PUT',
-            url: `${API}/v1.1/user/`,
-            data: bodyFormData
-        })
+        }
+
+        axios.patch(`${API}/v1.1/user/`, bodyFormData, config)
             .then(res => {
                 returnData(res)
                 dispatch({
@@ -322,6 +324,8 @@ export const sendProfilePhotoAction = (bodyFormData, token) => async (dispatch) 
                 })
             })
             .catch(error => {
+                // Hide logs in production, see https://dev.to/sharmakushal/hide-all-console-logs-in-production-with-just-3-lines-of-code-pp4
+                console.log(error.response.data)
                 console.log(error)
                 returnError(error)
             })
@@ -340,6 +344,7 @@ export const getDataLanguages = (token) => async (dispatch) => {
                 "Authorization": `token ${token}`,
             },
         }
+
         axios.get(`${API}/v1/users/languages/`, config)
             .then(res => {
                 returnData(res.data)
@@ -368,7 +373,8 @@ export const sendAnyUserData = (userFormData, token) => async (dispatch) => {
                 "Authorization": `token ${token}`,
             },
         }
-        axios.put(`${API}/v1.1/user/`, userFormData, config)
+        
+        axios.patch(`${API}/v1.1/user/`, userFormData, config)
             .then(res => {
                 returnData(res)
                 dispatch({
@@ -377,6 +383,8 @@ export const sendAnyUserData = (userFormData, token) => async (dispatch) => {
                 })
             })
             .catch(error => {
+                // Hide logs in production
+                console.log(error.response.data);
                 returnError(error)
             })
     })

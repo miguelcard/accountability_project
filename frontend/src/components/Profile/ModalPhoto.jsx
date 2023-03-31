@@ -1,12 +1,11 @@
 import React, { useState } from 'react'
-import { Button, Modal, ModalHeader, ModalBody, ModalFooter, FormGroup, Label, Input } from 'reactstrap'
 import { connect } from 'react-redux'
 import { sendProfilePhotoAction, getUserDataAction } from '../../redux/loginDucks'
 
 
 
 
-const ModalPhoto = ({ openModal, isOpen, sendProfilePhotoAction, getUserDataAction, token }) => {
+const ModalPhoto = ({ sendProfilePhotoAction, getUserDataAction, token }) => {
 
     const [profilePhoto, setProfilePhoto] = useState(null)
 
@@ -23,7 +22,6 @@ const ModalPhoto = ({ openModal, isOpen, sendProfilePhotoAction, getUserDataActi
             }
             const res = await sendProfilePhotoAction(bodyData, token)
             if (res.status === 200) {
-                openModal()
                 // window.location.href = window.location.href + '';
                 getUserDataAction(token)
             }
@@ -34,24 +32,24 @@ const ModalPhoto = ({ openModal, isOpen, sendProfilePhotoAction, getUserDataActi
 
     return (
         <>
-            <Modal isOpen={isOpen}>
-                <ModalHeader>add photo</ModalHeader>
-                <ModalBody>
-                    <FormGroup>
-                        <Label>add your profile photo</Label>
-                        <Input
+            <div>
+                <h2>add photo</h2>
+                <div>
+                    <div>
+                        <span>add your profile photo</span>
+                        <input
                             type="file"
                             name="file"
                             multiple
                             onChange={e => sendFiles(e.target.files)}
                         />
-                    </FormGroup>
-                </ModalBody>
-                <ModalFooter>
-                    <Button color="success" onClick={sendTotalData}>send</Button>
-                    <Button color="primary" onClick={openModal} >Close</Button>
-                </ModalFooter>
-            </Modal>
+                    </div>
+                </div>
+                <div>
+                    <button color="success" onClick={sendTotalData}>send</button>
+                    <button color="primary" >Close</button>
+                </div>
+            </div>
         </>
     )
 }
