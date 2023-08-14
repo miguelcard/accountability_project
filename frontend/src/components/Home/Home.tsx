@@ -13,14 +13,14 @@ const Home: React.FC = () => {
 
     return (
         <>
-            {/* put all body inside a grid?? ... for now not needed ...*/}
+            {/* put whole body inside a grid? ... for now not needed ...*/}
             <LandingNavbar />
             <img src={blob} alt="blob" className='home__blob' />
             <Box className='home__hero-header' >
                 <HeroBanner />
             </Box>
 
-            {/* Below is jsut a temp solution to extend the colot of the above box and add the copyright text */}
+            {/* Below is just a temp solution to extend the color of the above box and add the copyright text */}
             <Box sx={{
                 display: "flex",
                 alignItems: "flex-end",
@@ -40,7 +40,7 @@ const Home: React.FC = () => {
                     AvidHabits &copy; 2023
                 </span>
             </Box>
-            {/* FooterHome would go here or do layouts? */}
+            {/* FooterHome would go here or do layouts? ->  layout would be nicer*/}
         </>
     )
 }
