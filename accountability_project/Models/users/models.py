@@ -50,9 +50,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     ]
 
     username = models.CharField('username', max_length=120, unique=True)
-    name = models.CharField('your name', max_length=70, blank=True, null=True)
+    name = models.CharField('first name', max_length=70, blank=True, null=True)
     last_name = models.CharField('last name', max_length=90, blank=True, null=True)
-    email = models.EmailField('your email', max_length=255, unique=True)
+    email = models.EmailField('email', max_length=255, unique=True)
     profile_photo = models.ImageField(upload_to='images/profile/', blank=True, null=True)
     birthdate = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=7, choices=GENDER_CHOICES, blank=True, null=True)

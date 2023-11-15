@@ -19,10 +19,11 @@ class RegisterAPI(generics.GenericAPIView): # any advantage when using KnoxRegis
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response({
-        "user": UserSerializer(user, context=self.get_serializer_context()).data,
-        "authentication": {"token": AuthToken.objects.create(user)[1]}
-        })
+        
+        response = Response({"user": UserSerializer(user, context=self.get_serializer_context()).data})
+        token = AuthToken.objects.create(user)[1]
+
+        return set_auth_cookie(response, token)
 
 #Login API 
 class LoginAPI(KnoxLoginView):
@@ -36,10 +37,33 @@ class LoginAPI(KnoxLoginView):
             login(request, user)
         else:
             return Response({'errors' : serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({
-                "user":UserSerializer(user, context={'request': request}).data,
-                "authentication": super(LoginAPI, self).post(request, format=None).data
-            })
         
+        response = super(LoginAPI, self).post(request, format=None)
+        token = response.data['token']
+        del response.data['token']
 
+        return set_auth_cookie(response, token)
+
+
+# Sets the cookie to the response object and returns it
+def set_auth_cookie(response, token):
+    response.set_cookie(
+            'auth_token',
+            token,
+            httponly=True,
+            samesite='strict'
+        )
+
+    return response
+
+        # To delete, was used when saving the token in the local storage, for registration:
+        # return Response({
+        # "user": UserSerializer(user, context=self.get_serializer_context()).data,
+        # "authorization": {"token": AuthToken.objects.create(user)[1]}
+        # })
+        
+        # For login:
+        # return Response({
+        #         "user":UserSerializer(user, context={'request': request}).data,
+        #         "authorization": super(LoginAPI, self).post(request, format=None).data
+        #     })
