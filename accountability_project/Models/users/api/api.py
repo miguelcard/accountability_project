@@ -30,11 +30,10 @@ class GetAllUserLanguagesApiView(generics.ListAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
 
-# This API is available to Admins only 
-class UserGenericApiView(generics.GenericAPIView,
+# This API is available to Admins only to perform operations on Users
+class UsersAdminApiView(generics.GenericAPIView,
                         mixins.ListModelMixin,
-                        mixins.RetrieveModelMixin,
-                        mixins.DestroyModelMixin
+                        mixins.RetrieveModelMixin
                         ):
 
     queryset = User.objects.all()
@@ -46,11 +45,16 @@ class UserGenericApiView(generics.GenericAPIView,
             return self.retrieve(request, pk)
         else:
             return self.list(request)
-
-    def delete(self, request, pk=None):
-        return self.destroy(request, pk)   
+         
 
     def get_serializer_class(self):
-        if(request.method == 'PUT'):
+        print("request: ", self.request)
+        if(self.request.method == 'PUT'):
             return UserUpdatedFieldsWithoutPasswordSerializer
         return UserSerializer 
+    
+# This API is available to Admins only to perform operations on a single User
+class SingleUserAdminApiView(UsersAdminApiView, mixins.DestroyModelMixin):
+        
+        def delete(self, request, pk=None):
+            return self.destroy(request, pk)

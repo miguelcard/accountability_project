@@ -22,7 +22,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     #     pass
 
     def create(self, validated_data):
-        user = User(email=self.validated_data['email'], username=self.validated_data['username'], name=self.validated_data['name'])
+        user = User(email=self.validated_data['email'], username=self.validated_data['username'])
         password = validated_data['password']
         password2 =validated_data['password2']
 
