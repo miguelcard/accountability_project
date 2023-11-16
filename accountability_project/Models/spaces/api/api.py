@@ -4,9 +4,9 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from rest_framework import generics, status
 from Models.spaces.models import Space, SpaceRole
-from Models.spaces.api.serializers import SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer, SpaceRoleSerializerForEdition
+from Models.spaces.api.serializers import SimpleUserSerializer, SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer, SpaceRoleSerializerForEdition
 from django.db.models import Q
-from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination, SpaceRolesPagination
+from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination, GenericPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from Models.habits.models import BaseHabit
@@ -85,7 +85,9 @@ class SpaceHabitsApiView(generics.GenericAPIView):
                 specific_serializer = RecurrentHabitSerializerToRead(habit, context=context)
             else:
                 specific_serializer = GoalSerializerToRead(habit, context=context)
-            response_data.append(specific_serializer.data) 
+            response_data.append(specific_serializer.data)
+
+        return response_data
             
    
 # DELETE
@@ -181,7 +183,7 @@ class SpaceRolesListApiView(generics.ListAPIView):
     Gets list of all the spaceroles from a space where user belongs
     """
     serializer_class = SpaceRoleSerializer
-    pagination_class = SpaceRolesPagination
+    pagination_class = GenericPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['role', 'member__id', 'member__username'] 
     ordering_fields = ['id', 'role', 'member__username', 'member__id', 'member__name']
@@ -193,3 +195,23 @@ class SpaceRolesListApiView(generics.ListAPIView):
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
         logger.info(f' Retrieving all roles for space with id: {space_id} and name: {space.name}')
         return space.spaceroles.all()
+    
+
+# GET
+class SpaceUsersApiView(generics.ListAPIView):
+    """
+    Gets list of all the users from the Space.
+    """
+    serializer_class = SimpleUserSerializer
+    pagination_class = GenericPagination
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    # filter_fields = ['type', 'title', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name', 'owner__id', 'owner__username'] 
+    # ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name', 'owner__id', 'owner__username']
+    # search_fields = ['title', 'description', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'tags__name', 'owner__username'] 
+
+    def get_queryset(self):
+        space_id = self.kwargs.get("space_pk")
+        logger.info(f' Get all users from space with id: {space_id}')
+        space = get_object_or_404(Space, id=space_id, members=self.request.user)
+        logger.info(f' Retrieving all users for space with id: {space_id} and name: {space.name}')
+        return space.members.all()

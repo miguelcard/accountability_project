@@ -155,7 +155,7 @@ REST_FRAMEWORK = {
     # Default authentication for all views 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # 'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication', # comment this one? Only needed for roing rest operations in the GUI
+        # 'rest_framework.authentication.SessionAuthentication', # comment this one? Only needed for roing rest operations in the GUI
         'Models.users.auth_utils.TokenAuthSupportCookie'
     ],
     # Schema for API Documentation

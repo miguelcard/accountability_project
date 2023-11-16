@@ -1,6 +1,6 @@
 from rest_framework.pagination import PageNumberPagination
 
-""" ---------Pagination classes fot Spaces-------"""
+""" ---------Pagination classes for Spaces-------"""
 
 class SpacesPagination(PageNumberPagination):
     page_size = 10
@@ -12,7 +12,7 @@ class SpaceHabitsPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-class SpaceRolesPagination(PageNumberPagination):
+class GenericPagination(PageNumberPagination):
     page_size = 100
     page_size_query_param = 'page_size'
     max_page_size = 900
