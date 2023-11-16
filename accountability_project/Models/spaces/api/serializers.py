@@ -5,6 +5,7 @@ from Models.spaces.models import Space, SpaceRole
 from Models.habits.api.serializers import HabitTagSerializer
 from Models.habits.models import BaseHabit, RecurrentHabit
 from Models.habits.api.serializers import GoalSerializerToRead, RecurrentHabitSerializerToRead
+from Models.users.models import User
 
 class SpaceSerializer(serializers.ModelSerializer):
     
@@ -77,4 +78,31 @@ class SpaceRoleSerializerForEdition(serializers.ModelSerializer):
         read_only_fields = (
             'space',
             'member'
+        )
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    """
+    Serializer to retrieve general information about the users belonging to the space, which other usehrs can also see 
+    """
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "name",
+            "last_name",
+            "profile_photo",
+            "email",
+            "about",
+            "is_active"
+        )
+        read_only_fields = (
+            "id",
+            "username",
+            "name",
+            "last_name",
+            "profile_photo",
+            "email",
+            "about",
+            "is_active"
         )
