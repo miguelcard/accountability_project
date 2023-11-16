@@ -205,9 +205,12 @@ class SpaceUsersApiView(generics.ListAPIView):
     serializer_class = SimpleUserSerializer
     pagination_class = GenericPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
-    # filter_fields = ['type', 'title', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name', 'owner__id', 'owner__username'] 
-    # ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name', 'owner__id', 'owner__username']
-    # search_fields = ['title', 'description', 'type', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'tags__name', 'owner__username'] 
+    # filter_fields = [] 
+    ordering_fields = [
+        "username",
+        "email",
+        "is_active"]
+    # search_fields = [] 
 
     def get_queryset(self):
         space_id = self.kwargs.get("space_pk")
