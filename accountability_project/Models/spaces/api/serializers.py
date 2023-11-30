@@ -7,6 +7,34 @@ from Models.habits.models import BaseHabit, RecurrentHabit
 from Models.habits.api.serializers import GoalSerializerToRead, RecurrentHabitSerializerToRead
 from Models.users.models import User
 
+class SimpleUserSerializer(serializers.ModelSerializer):
+    """
+    Serializer to retrieve general information about the users belonging to the space, which other users can also see 
+    """
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "name",
+            "last_name",
+            "profile_photo",
+            "email",
+            "about",
+            "is_active"
+        )
+        read_only_fields = (
+            "id",
+            "username",
+            "name",
+            "last_name",
+            "profile_photo",
+            "email",
+            "about",
+            "is_active"
+        )
+        
+        
 class SpaceSerializer(serializers.ModelSerializer):
     
     space_habits = serializers.PrimaryKeyRelatedField(queryset=BaseHabit.objects.all(), many=True, allow_null=True, required=False)
@@ -28,13 +56,11 @@ class SpaceSerializerToRead(serializers.ModelSerializer):
     members_count = serializers.IntegerField(read_only=True)
     habits_count = serializers.IntegerField(read_only=True)
     space_habits = serializers.PrimaryKeyRelatedField(read_only=True, many=True) # possibly create a nested serializer for this one
+    creator = SimpleUserSerializer(read_only=True)
     
     class Meta:
         model = Space
         fields = '__all__'
-        read_only_fields = (
-            'creator',
-        )
 
 class SpaceSerializerToReadWithHabits(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
@@ -78,31 +104,4 @@ class SpaceRoleSerializerForEdition(serializers.ModelSerializer):
         read_only_fields = (
             'space',
             'member'
-        )
-
-class SimpleUserSerializer(serializers.ModelSerializer):
-    """
-    Serializer to retrieve general information about the users belonging to the space, which other usehrs can also see 
-    """
-    class Meta:
-        model = User
-        fields = (
-            "id",
-            "username",
-            "name",
-            "last_name",
-            "profile_photo",
-            "email",
-            "about",
-            "is_active"
-        )
-        read_only_fields = (
-            "id",
-            "username",
-            "name",
-            "last_name",
-            "profile_photo",
-            "email",
-            "about",
-            "is_active"
         )

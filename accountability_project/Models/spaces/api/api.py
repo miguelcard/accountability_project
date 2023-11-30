@@ -209,7 +209,9 @@ class SpaceUsersApiView(generics.ListAPIView):
     ordering_fields = [
         "username",
         "email",
-        "is_active"]
+        "is_active",
+        "updated_at",
+        ]
     # search_fields = [] 
 
     def get_queryset(self):
