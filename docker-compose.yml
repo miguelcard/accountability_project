@@ -7,16 +7,11 @@ services:
         build:
             context: ./frontend/
             dockerfile: Dockerfile
-        volumes:
-            # just means that changes done here (in source code/ in the host) are also instantly applied/persisted inside the container
-            - ./frontend:/code/frontend # TODO use "$PWD"/frontend maybe
-            # We need to mount the node_modules folder because it is overriten during the WORKDIR command from the DockerFile
-            - /code/frontend/node_modules
         environment:
             #  Use polling to watch for file changes 
             - CHOKIDAR_USEPOLLING=true
         ports:
-            - "3000:3000"
+            - "4000:3000"
         stdin_open: true
         depends_on:
             - web
