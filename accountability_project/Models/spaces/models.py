@@ -10,6 +10,7 @@ class Space(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=255, blank=True, null=True)
     members = models.ManyToManyField(User, related_name='user_spaces', through='SpaceRole')
+    icon_alias = models.CharField(max_length=50, blank=True, null=True, help_text=("the alias of the icon for this space, according to the frontend alias to icon mapper"))
     
     def __str__(self):
         return f'[{self.id}] {self.name}'
@@ -21,14 +22,14 @@ class Space(models.Model):
         db_table = 'space'
 
 class SpaceRole(models.Model):
-
-    ROLES = [  
+  
+    ROLES = [
     ('admin', 'admin'),
     ('member', 'member')
     ]
-    role = models.CharField(choices=ROLES, max_length=20)
-    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='spaceroles')
-    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='spaceroles')
+    role = models.CharField(choices=ROLES, max_length=20, help_text=("Character field with the choices of 'admin' or 'member'"))
+    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='spaceroles', help_text=("PK of the user"))
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='spaceroles', help_text=("PK of the space"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     # here interesting fields can be added on how users are invited to groups

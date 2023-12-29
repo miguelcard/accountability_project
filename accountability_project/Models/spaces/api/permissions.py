@@ -38,7 +38,7 @@ class BelongsToSpaceFromSpaceRole(permissions.BasePermission):
 
 class HasEqualOrHigherRoleAsNewUser(permissions.BasePermission):
     """
-    request user has equal or higher role than the new user in the serialiyer
+    request user has equal or higher role than the new user in the serializer
     e.g. a user with "member" role would have no permission to add a user with "admin" role, only member
     """
     message = 'You must have equal or higher permission than the user you are adding'
