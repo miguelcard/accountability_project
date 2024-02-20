@@ -164,3 +164,9 @@ class GetAuthenticatedUserSerializer(serializers.ModelSerializer, UserGetAgeSeri
         read_only_fields = (
             "age",
         )
+        
+        
+class UsernameAndEmailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email')
