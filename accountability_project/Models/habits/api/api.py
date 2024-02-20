@@ -84,12 +84,15 @@ class GoalDetailApiView(generics.RetrieveUpdateDestroyAPIView):
         if(self.request is not None and self.request.method == 'GET'):
             return GoalSerializerToRead
         return GoalSerializerToWrite
-
-
-""" ---------view for both Recurrent Habits and Goals-------"""
+    
 
 # GET & GET (detailed) 
 class AllHabitsApiView(generics.GenericAPIView): 
+    """
+    View for both Recurrent Habits and Goals.
+    If no parameter is sent it will return all the Habits and Goals belonging to the authenticated user
+    If the {id} parameter is sent, only the Habit/Goal with that id will be returned.
+    """
     pagination_class = AllHabitsPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['type', 'title', 'recurrenthabit__times', 'recurrenthabit__time_frame', 'goal__start_date', 'goal__finish_date', 'tags__name', 'owner__id', 'owner__username', 'spaces__name', 'spaces__id'] 
@@ -132,11 +135,13 @@ class AllHabitsApiView(generics.GenericAPIView):
                 response_data.append(specific_serializer.data) 
                 
             return self.get_paginated_response(response_data) if page is not None else Response(response_data)
-
-""" ---------Get view to show all existent Tags for user to choose from-------"""
+        
 
 # GET
 class GetAllHabitTagsApiView(generics.ListAPIView):
+    """
+    Get view to show all existent Tags for user to choose from
+    """
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     ordering_fields = ['name']  
     search_fields = ['name'] 
