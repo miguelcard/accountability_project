@@ -170,3 +170,10 @@ class UsernameAndEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'email')
+        
+        
+class CheckEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+
+class CheckUsernameSerializer(serializers.Serializer):
+    username = serializers.CharField(required=False)
