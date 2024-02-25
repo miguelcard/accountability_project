@@ -97,25 +97,6 @@ class UsernameAndEmailSearchView(generics.ListAPIView):
         return queryset
     
     
-class CheckEmailView(generics.RetrieveAPIView):
-    """
-    Checks if the email sent in the request paramterers already exists or not, returns {  taken: true } if the email exists, false otherwise.
-    """
-    
-    serializer_class = UsernameAndEmailSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-
-        # Query the database to check if the email exists
-        user_with_email = User.objects.filter(email=email).exists()
-
-        # Return true if the email is taken, false otherwise
-        return Response({'taken': user_with_email}, status=status.HTTP_200_OK)
-    
-    
     
 class CheckEmailUsernameView(generics.RetrieveAPIView):
     """
