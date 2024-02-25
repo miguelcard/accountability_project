@@ -1,13 +1,14 @@
 from django.http import request
 from rest_framework.permissions import IsAdminUser
 from Models.users.models import User, Tag, Language
-from Models.users.api.serializers import UserSerializer, UserUpdatedFieldsWithoutPasswordSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer, UsernameAndEmailSerializer
+from Models.users.api.serializers import CheckEmailSerializer, CheckUsernameSerializer, UserSerializer, UserUpdatedFieldsWithoutPasswordSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer, UsernameAndEmailSerializer
 from rest_framework import status, generics, mixins 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import SearchFilter
 from Models.users.api.pagination import GenericUserPagination
 from django.db.models import Q
+from rest_framework import permissions
 
 class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserUpdatedFieldsWithoutPasswordSerializer 
@@ -94,3 +95,29 @@ class UsernameAndEmailSearchView(generics.ListAPIView):
         queryset = sorted(queryset, key=lambda user: (search_query.lower() in user.username.lower(), search_query.lower() in user.email.lower()), reverse=True)
         
         return queryset
+    
+    
+    
+class CheckEmailUsernameView(generics.RetrieveAPIView):
+    """
+    Checks if wither the email or username sent in the request paramterers already exist or not, returns { email_taken: true } or { username_taken: true } 
+    if the email/username exist, false otherwise.
+    """
+    
+    permission_classes = (permissions.AllowAny,)
+
+    
+    def retrieve(self, request, *args, **kwargs):
+        email_serializer = CheckEmailSerializer(data=request.query_params)
+        email_serializer.is_valid()
+
+        username_serializer = CheckUsernameSerializer(data=request.query_params)
+        username_serializer.is_valid()
+
+        email = email_serializer.validated_data.get('email')
+        username = username_serializer.validated_data.get('username')
+
+        user_with_email = User.objects.filter(email=email).exists() if email else False
+        user_with_username = User.objects.filter(username=username).exists() if username else False
+
+        return Response({'email_taken': user_with_email, 'username_taken': user_with_username}, status=status.HTTP_200_OK)
