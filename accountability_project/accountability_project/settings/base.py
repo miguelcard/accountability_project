@@ -44,7 +44,6 @@ BASE_APPS = [
 
 LOCAL_APPS = [
     'Models.users',
-    'Models.groups',
     'Models.habits',
     'Models.spaces',
 ]
