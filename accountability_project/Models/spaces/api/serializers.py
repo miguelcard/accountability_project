@@ -68,6 +68,7 @@ class SpaceSerializerToReadWithHabits(serializers.ModelSerializer):
     members_count = serializers.IntegerField(read_only=True)
     habits_count = serializers.IntegerField(read_only=True)
     # shows the detailed habits that belong to this space 
+    members = serializers.SerializerMethodField(method_name='get_members')
     space_habits = serializers.SerializerMethodField(method_name='get_space_habits')
 
     class Meta:
@@ -77,6 +78,9 @@ class SpaceSerializerToReadWithHabits(serializers.ModelSerializer):
             'creator',
             'space_habits'
         )
+    
+    def get_members(self, obj):
+        return SimpleUserSerializer(obj.members, many=True).data
     
     def get_space_habits(self, obj):
         habits = obj.space_habits.all().select_subclasses() 

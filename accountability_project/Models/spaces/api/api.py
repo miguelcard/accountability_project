@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from rest_framework import generics, status
 from Models.spaces.models import Space, SpaceRole
+from Models.users.models import User
 from Models.spaces.api.serializers import SimpleUserSerializer, SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer, SpaceRoleSerializerForEdition
 from django.db.models import Q
 from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination, GenericPagination
@@ -220,3 +221,13 @@ class SpaceUsersApiView(generics.ListAPIView):
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
         logger.info(f' Retrieving all users for space with id: {space_id} and name: {space.name}')
         return space.members.all()
+
+class CalendarAPIView(generics.ListAPIView):
+    serializer_class = RecurrentHabitSerializerToRead
+
+    def get_queryset(self):
+        space_id = self.kwargs.get('pk')
+        space = get_object_or_404(Space, id=space_id)
+        owner_id = self.kwargs.get('owner_pk')
+        owner = get_object_or_404(User, id=owner_id)
+        return space.space_habits.filter(owner=owner).select_subclasses()
