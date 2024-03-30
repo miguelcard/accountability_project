@@ -4,7 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from rest_framework import generics, status
 from Models.spaces.models import Space, SpaceRole
-from Models.spaces.api.serializers import SimpleUserSerializer, SpaceSerializer, SpaceSerializerToReadWithHabits, SpaceRoleSerializer, SpaceRoleSerializerForEdition
+from Models.users.models import User
+from Models.spaces.api.serializers import SimpleUserSerializer, SpaceSerializer, SpaceSerializerToReadWithHabitsAndMembers, SpaceRoleSerializer, SpaceRoleSerializerForEdition
 from django.db.models import Q
 from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination, GenericPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -46,7 +47,7 @@ class SpacesDetailRetrieveWithHabitsApiView(generics.RetrieveAPIView):
     """
     Retrieves an specific Space if the user is the creator or a member of it, the Space habits are shown in detail in a nested seializer
     """
-    serializer_class = SpaceSerializerToReadWithHabits # This could be another serializer class with more details in the "to_representation method" if you choose it as the endpoint for PUT
+    serializer_class = SpaceSerializerToReadWithHabitsAndMembers # This could be another serializer class with more details in the "to_representation method" if you choose it as the endpoint for PUT
 
     def get_queryset(self, *args, **kwargs): 
         return Space.objects.annotate(members_count=Count('members', distinct=True)).annotate(habits_count=Count('space_habits', distinct=True)).filter(Q(creator=self.request.user) | Q(members=self.request.user)).prefetch_related('members')
@@ -195,7 +196,6 @@ class SpaceRolesListApiView(generics.ListAPIView):
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
         logger.info(f' Retrieving all roles for space with id: {space_id} and name: {space.name}')
         return space.spaceroles.all()
-    
 
 # GET
 class SpaceUsersApiView(generics.ListAPIView):
@@ -220,3 +220,21 @@ class SpaceUsersApiView(generics.ListAPIView):
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
         logger.info(f' Retrieving all users for space with id: {space_id} and name: {space.name}')
         return space.members.all()
+
+# GET
+class CalendarAPIView(generics.ListAPIView):
+    """
+    Retrieves a list of all recurrent habits with their checkmarks for a user in a specific space.
+    If the requesting user does not belong to the space a 404 status is returned.
+    """
+    serializer_class = RecurrentHabitSerializerToRead
+    pagination_class = SpaceHabitsPagination
+
+    def get_queryset(self):
+        space_id = self.kwargs.get('pk')
+        logger.info(f' Get all recurrent habits from space with id: {space_id}')
+        space = get_object_or_404(Space, id=space_id, members=self.request.user)
+        owner_id = self.kwargs.get('owner_pk')
+        owner = get_object_or_404(User, id=owner_id)
+        logger.info(f' Retrieving all recurrent habits for user with id: {owner_id} in space: {space_id} {space.name}')
+        return space.space_habits.filter(owner=owner).select_subclasses()
