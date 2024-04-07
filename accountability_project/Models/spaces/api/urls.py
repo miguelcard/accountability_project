@@ -4,7 +4,7 @@ SpaceRoleDeleteApiView, SpaceRoleInviteApiView, SpaceRoleEditApiView, SpaceRoles
 
 urlpatterns = [
     path('v1/spaces/', SpacesApiView.as_view(), name='spaces'),
-    path('v1/spaces/<int:pk>/owner/<int:owner_pk>/checkmarks/', CalendarAPIView.as_view(), name="calendar-checkmark-list"),
+    path('v1/spaces/<int:pk>/checkmarks/', CalendarAPIView.as_view(), name="calendar-checkmark-list"),
     path('v1/spaces/<int:pk>', SpacesDetailRetrieveWithHabitsApiView.as_view(), name='spaces-detail'),
     path('v1/spaces/<int:pk>/simple/', SpacesDetailApiView.as_view(), name='spaces-detail-simple'),
     path('v1/spaces/<int:space_pk>/habits/', SpaceHabitsApiView.as_view(), name='spaces-habits-list'),
