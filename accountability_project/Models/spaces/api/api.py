@@ -234,4 +234,4 @@ class CalendarAPIView(generics.ListAPIView):
         space_id = self.kwargs.get('pk')
         logger.info(f'Get all recurrent habits from space with id: {space_id}')
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
-        return space.space_habits.filter(owner=owner).select_subclasses()
+        return space.space_habits.select_subclasses()
