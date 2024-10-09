@@ -1,22 +1,4 @@
-version: '3'
-
 services:
-    frontend:
-        command : "npm start"
-        container_name: front
-        build:
-            context: ./frontend/
-            dockerfile: Dockerfile
-        environment:
-            #  Use polling to watch for file changes 
-            - CHOKIDAR_USEPOLLING=true
-        ports:
-            - "4000:3000"
-        stdin_open: true
-        depends_on:
-            - web
-        networks:
-            - frontend
 
     web:
         # restart: always
@@ -34,7 +16,6 @@ services:
         depends_on:
             - db
         networks:
-            - frontend
             - backend
 
     db:
@@ -79,8 +60,6 @@ volumes:
         driver: local
 
 networks:
-    frontend:
-        driver: bridge
     backend:
         driver: bridge
     db_admin:
