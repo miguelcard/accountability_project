@@ -225,8 +225,8 @@ class SpaceUsersApiView(generics.ListAPIView):
 class CalendarAPIView(generics.ListAPIView):
     """
     Retrieves a list of all habits with their checkmarks for all users in a specific space.
+    If the requesting user does not belong to the space a 404 status is returned.
     """
-    permission_classe = []
     serializer_class = RecurrentHabitSerializerToRead
     pagination_class = SpaceHabitsPagination
 
