@@ -224,7 +224,7 @@ class SpaceUsersApiView(generics.ListAPIView):
 # GET
 class CalendarAPIView(generics.ListAPIView):
     """
-    Retrieves a list of all recurrent habits with their checkmarks for a user in a specific space.
+    Retrieves a list of all habits with their checkmarks for all users in a specific space.
     If the requesting user does not belong to the space a 404 status is returned.
     """
     serializer_class = RecurrentHabitSerializerToRead
@@ -232,9 +232,6 @@ class CalendarAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         space_id = self.kwargs.get('pk')
-        logger.info(f' Get all recurrent habits from space with id: {space_id}')
+        logger.info(f'Get all recurrent habits from space with id: {space_id}')
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
-        owner_id = self.kwargs.get('owner_pk')
-        owner = get_object_or_404(User, id=owner_id)
-        logger.info(f' Retrieving all recurrent habits for user with id: {owner_id} in space: {space_id} {space.name}')
-        return space.space_habits.filter(owner=owner).select_subclasses()
+        return space.space_habits.select_subclasses()
