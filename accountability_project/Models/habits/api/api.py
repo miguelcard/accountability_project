@@ -1,5 +1,5 @@
 from rest_framework.exceptions import NotFound
-from Models.habits.api.serializers import RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite, HabitTagSerializer, CheckMarkNestedSerializer, MilestoneNestedSerializer
+from Models.habits.api.serializers import RecurrentHabitSerializerToPatch, RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite, HabitTagSerializer, CheckMarkNestedSerializer, MilestoneNestedSerializer
 from Models.habits.models import BaseHabit, RecurrentHabit, Goal, HabitTag, CheckMark, Milestone
 from rest_framework import generics, status, views
 from rest_framework.response import Response
@@ -47,7 +47,9 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'GET'):
             return RecurrentHabitSerializerToRead
-        return RecurrentHabitSerializerToWrite
+        if(self.request is not None and self.request.method == 'PUT'): # ensure required fields in PUT
+            return RecurrentHabitSerializerToWrite
+        return RecurrentHabitSerializerToPatch # when patching no need to ensure all the required fields are passed
 
 """ ---------views for Goals-------"""
 
