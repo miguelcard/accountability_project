@@ -44,15 +44,22 @@ class UserBelongsToHabitSpaces(BasePermission):
         if request.method in SAFE_METHODS:
             return True
 
-        # habit_serializer_spaces are the habits listed in the JSON request body
         habit_serializer = view.get_serializer(data=request.data)
         habit_serializer.is_valid(raise_exception=True)
-        habit_serializer_spaces = habit_serializer.validated_data['spaces']
+        
+        # Getting the space-ids from the habit
+        habit_id = view.kwargs.get("pk")
+        try:
+            habit = BaseHabit.objects.get(id=habit_id)
+        except BaseHabit.DoesNotExist:
+            return False
+        
+        habit_spaces = habit.spaces.all()
 
         # getting the spaces where the user is a member:
         user_spaces = request.user.user_spaces.all()
 
-        for habit_space in habit_serializer_spaces:
+        for habit_space in habit_spaces:
             if habit_space not in user_spaces:
                 return False
         return True
