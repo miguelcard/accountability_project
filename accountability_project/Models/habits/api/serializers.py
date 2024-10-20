@@ -59,12 +59,12 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
         serializer = RecurrentHabitSerializerToRead(instance, context=self.context)
         return serializer.data
     
-# comment
+# Overwrites the Serializer to write to make the fields not required for the PATCH methods
 class RecurrentHabitSerializerToPatch(RecurrentHabitSerializerToWrite):
     # Set the fields with required=False by default
     times = serializers.IntegerField(required=False)
     time_frame = serializers.CharField(required=False)
-    
+
 
 class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
