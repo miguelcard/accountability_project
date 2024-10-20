@@ -64,6 +64,7 @@ class RecurrentHabitSerializerToPatch(RecurrentHabitSerializerToWrite):
     # Set the fields with required=False by default
     times = serializers.IntegerField(required=False)
     time_frame = serializers.CharField(required=False)
+    title = serializers.CharField(required=False)
 
 
 class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
