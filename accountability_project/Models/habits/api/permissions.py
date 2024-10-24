@@ -50,7 +50,7 @@ class UserBelongsToHabitSpaces(BasePermission):
         user_spaces = request.user.user_spaces.all()
 
 
-        # Comparing to space(s) semt in the habit serializer for POST / creating a habit
+        # Comparing to space(s) sent in the habit serializer for POST / creating a habit
         if request.method == 'POST':
             return self.check_habit_serializer_has_space_where_user_belongs(habit_serializer, user_spaces)
 
