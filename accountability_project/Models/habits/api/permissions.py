@@ -32,32 +32,51 @@ class UserBelongsToHabitSpaces(BasePermission):
 
     # For POST
     def has_permission(self, request, view):
-        return self.check_user_belongs_to_space_sent_in_habit_serializer(request, view)
+        return self.check_user_belongs_to_same_space_as_habit(request, view)
         
-    # For GET, PUT, PATCH
+    # For GET, PUT, PATCH, DELETE
     def has_object_permission(self, request, view, obj):
-        return self.check_user_belongs_to_space_sent_in_habit_serializer(request, view)
+        return self.check_user_belongs_to_same_space_as_habit(request, view)
 
 
-    def check_user_belongs_to_space_sent_in_habit_serializer(self, request, view):
+    def check_user_belongs_to_same_space_as_habit(self, request, view):
 
         if request.method in SAFE_METHODS:
             return True
 
         habit_serializer = view.get_serializer(data=request.data)
         habit_serializer.is_valid(raise_exception=True)
-        
-        # Getting the space-ids from the habit
+        # getting the spaces where the user is a member:
+        user_spaces = request.user.user_spaces.all()
+
+
+        # Comparing to space(s) semt in the habit serializer for POST / creating a habit
+        if request.method == 'POST':
+            return self.check_habit_serializer_has_space_where_user_belongs(habit_serializer, user_spaces)
+
+
+        # Getting the space-ids from the habit for methods like GET PUT PATCH
+        #  ... TODO if the user is trying to patch/put a space within the request? (if thats done somewhere else change the name of the error message)
         habit_id = view.kwargs.get("pk")
+        return self.check_habit_belongs_to_any_user_space(habit_id, user_spaces)
+
+
+
+    def check_habit_serializer_has_space_where_user_belongs(self, habit_serializer, user_spaces):
+        habit_serializer_spaces = habit_serializer.validated_data['spaces']
+        for habit_space in habit_serializer_spaces:
+            if habit_space not in user_spaces:
+                return False
+        return True
+    
+
+    def check_habit_belongs_to_any_user_space(self, habit_id, user_spaces):
         try:
             habit = BaseHabit.objects.get(id=habit_id)
         except BaseHabit.DoesNotExist:
             return False
         
         habit_spaces = habit.spaces.all()
-
-        # getting the spaces where the user is a member:
-        user_spaces = request.user.user_spaces.all()
 
         for habit_space in habit_spaces:
             if habit_space not in user_spaces:
