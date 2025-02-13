@@ -100,7 +100,7 @@ class CheckMark(models.Model):
         db_table = 'checkmark'
 
     def __str__(self):
-        return f'{self.date} - {self.status} - ({self.habit})'
+        return f'{self.date} - {self.status} - habit: ({self.habit})'
 
 class Milestone(models.Model):
 

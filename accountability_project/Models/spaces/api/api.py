@@ -103,42 +103,39 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
     def delete(self, request, pk=None):
         user = self.request.user
         space = get_object_or_404(Space, pk=pk)
-        user_is_related_to_space = False
         try:
             # query if user is member
             space_role = SpaceRole.objects.get(space__id=space.id, member=user.id)
         except SpaceRole.DoesNotExist:
-            space_role = None
+            raise NotFound('User does not belong to the Space')
         
-        if space_role is not None:
-            user_is_related_to_space = True
-            space_role.delete()
-            logger.info(f'space role deleted for user with id: {user.id} uname: {user.username} and space with id: {space.id} name: {space.name}')
-            self.unlink_habits(space, user)
+        space_role.delete()
+        logger.info(f'space role deleted for user with id: {user.id} uname: {user.username} and space with id: {space.id} name: {space.name}')
+        self.unlink_habits(space, user, True)
+
+        if not space.members.all():
+            logger.info(f'Deleting space which has no more members, space id: "{space.id}" space name: "{space.name}"')
+            space.delete()
+            # nothing else to do
+            return Response(status=status.HTTP_204_NO_CONTENT)
             
-        # if user is creator additionally replace him by next user in the group,  if no more users are in the group, delete whole space
+        #TODO be aware that this operation only changes the space creator, not the spacerole of any user from a member to an admin.
+        # if user is creator additionally replace him by next user in the space,  if no more users are in the space, delete whole space
         if space.creator == self.request.user:
-            user_is_related_to_space = True
-            logger.info(f'Changing user with id: {user.id} uname: {user.username} from being the creator of space with id: {space.id} name: {space.name}')
+            logger.info(f'Removing the creator role from user with id: {user.id} username: {user.username} in the space with id: {space.id} name: {space.name}')
             members_list = space.members.all()
             for member in members_list:
                 if member is not user:
                     space.creator = member
-                    logger.info(f'New creator user with id: {user.id} uname: {user.username} set to space with id: {space.id} name: {space.name}')
+                    logger.info(f'New creator role given to the user with id: {user.id} username: {user.username} in the space with id: {space.id} name: {space.name}')
+                    space.save()
                     break
-
-            space.save()
-            self.unlink_habits(space, user)
-
-        if not user_is_related_to_space:
-            raise NotFound('User does not belong to the Space')
-
-        if not space.members.all():
-            space.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def unlink_habits(self, space, user):
+
+    # The delete_habits tag is a boolean, when set to true, deletes the habit and its checkmarks, for now thats gonna be the behaviour to KISS
+    def unlink_habits(self, space, user, delete_habits):
 
         user_habits = user.habits.all()
         space_habits = space.space_habits.all()
@@ -146,6 +143,9 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
         intersection_habits = list(set(user_habits).intersection(space_habits))
 
         for habit in intersection_habits:
+            if delete_habits:
+                habit.delete()
+                continue
             habit.spaces.remove(space)
             habit.save()
 
