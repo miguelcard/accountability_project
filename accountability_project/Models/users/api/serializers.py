@@ -104,7 +104,7 @@ class UserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
             "last_name",
             "email",
             "password", 
-            "profile_photo",
+            "avatar_seed",
             "birthdate",
             "age",
             "gender",

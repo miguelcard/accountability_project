@@ -53,7 +53,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField('first name', max_length=70, blank=True, null=True)
     last_name = models.CharField('last name', max_length=90, blank=True, null=True)
     email = models.EmailField('email', max_length=255, unique=True)
-    profile_photo = models.ImageField(upload_to='images/profile/', blank=True, null=True)
+    avatar_seed = models.CharField('avatar seed', max_length=20, blank=True, null=True)
     birthdate = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=7, choices=GENDER_CHOICES, blank=True, null=True)
     about = models.CharField(max_length=280, blank=True, null=True)

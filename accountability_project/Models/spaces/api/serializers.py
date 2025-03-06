@@ -19,7 +19,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
             "username",
             "name",
             "last_name",
-            "profile_photo",
+            "avatar_seed",
             "email",
             "about",
             "is_active"
@@ -29,7 +29,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
             "username",
             "name",
             "last_name",
-            "profile_photo",
+            "avatar_seed",
             "email",
             "about",
             "is_active"
