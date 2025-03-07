@@ -101,7 +101,6 @@ class UserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
             "id",
             "username",
             "name",
-            "last_name",
             "email",
             "password", 
             "avatar_seed",
