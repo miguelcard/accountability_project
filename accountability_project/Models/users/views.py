@@ -9,6 +9,9 @@ from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from Models.users.api.serializers import LoginSerializer
 from rest_framework import status
+from knox import views as knox_views
+from Models.users.auth_utils import TokenAuthSupportCookie
+
 
 # Register API
 class RegisterAPI(generics.GenericAPIView): # any advantage when using KnoxRegisterView instead?
@@ -56,14 +59,10 @@ def set_auth_cookie(response, token):
 
     return response
 
-        # To delete, was used when saving the token in the local storage, for registration:
-        # return Response({
-        # "user": UserSerializer(user, context=self.get_serializer_context()).data,
-        # "authorization": {"token": AuthToken.objects.create(user)[1]}
-        # })
-        
-        # For login:
-        # return Response({
-        #         "user":UserSerializer(user, context={'request': request}).data,
-        #         "authorization": super(LoginAPI, self).post(request, format=None).data
-        #     })
+
+class CustomLogoutView(knox_views.LogoutView):
+    authentication_classes = (TokenAuthSupportCookie,)
+    
+
+class CustomLogoutAllView(knox_views.LogoutAllView):
+    authentication_classes = (TokenAuthSupportCookie,)
