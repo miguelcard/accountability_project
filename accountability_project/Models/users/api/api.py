@@ -100,7 +100,7 @@ class UsernameAndEmailSearchView(generics.ListAPIView):
     
 class CheckEmailUsernameView(generics.RetrieveAPIView):
     """
-    Checks if wither the email or username sent in the request paramterers already exist or not, returns { email_taken: true } or { username_taken: true } 
+    Checks if either the email or username sent in the request paramterers already exist or not, returns { email_taken: true } or { username_taken: true } 
     if the email/username exist, false otherwise.
     """
     
@@ -117,7 +117,7 @@ class CheckEmailUsernameView(generics.RetrieveAPIView):
         email = email_serializer.validated_data.get('email')
         username = username_serializer.validated_data.get('username')
 
-        user_with_email = User.objects.filter(email=email).exists() if email else False
-        user_with_username = User.objects.filter(username=username).exists() if username else False
+        user_with_email = User.objects.filter(email=email.lower()).exists() if email else False
+        user_with_username = User.objects.filter(username=username.lower()).exists() if username else False
 
         return Response({'email_taken': user_with_email, 'username_taken': user_with_username}, status=status.HTTP_200_OK)
