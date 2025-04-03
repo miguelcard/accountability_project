@@ -2,6 +2,8 @@
 from django.db import models
 from django.db.models.base import Model
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.dispatch import receiver
+from django.db.models.signals import pre_save
 from simple_history.models import HistoricalRecords
 
 
@@ -77,3 +79,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'[{str(self.id)}] {self.username} - {self.name} {self.email} {self.created_at} {self.updated_at}'
+
+
+# Method signals that everytime a User instance is gonna be saved, its username is converted to lower case
+@receiver(pre_save, sender=User)
+def lowercase_username(sender, instance, **kwargs):
+    if instance.username:
+        instance.username = instance.username.lower()
+
+
+# Method signals that everytime a User instance is gonna be saved, its email is converted to lower case
+@receiver(pre_save, sender=User)
+def lowercase_email(sender, instance, **kwargs):
+    if instance.email:
+        instance.email = instance.email.lower()
