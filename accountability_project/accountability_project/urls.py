@@ -18,8 +18,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.schemas import get_schema_view
-from rest_framework.documentation import include_docs_urls
 from rest_framework.permissions import AllowAny
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,16 +32,14 @@ urlpatterns = [
 """ configuration for API documentation """
 
 urlpatterns += [
-    path('', include_docs_urls(
-        title='Project API', 
-        permission_classes=[AllowAny]
-        )),
-    path('schema/', get_schema_view(
-            title="Project API ",
-            description="API schema for all APIs",
-            version="1.0.0",
-            permission_classes=[AllowAny]
-    ), name='openapi-schema'),
+    # API schema (raw OpenAPI)
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+
+    # Swagger UI
+    path('docs/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
+    # Redoc UI
+    path('docs/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 if settings.DEBUG:

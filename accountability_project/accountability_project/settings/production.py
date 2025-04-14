@@ -1,8 +1,6 @@
 from .base import *
 
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG')
 
 ALLOWED_HOSTS = ['*']
 
@@ -21,11 +19,11 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': config('NAME'),
-        'USER': config('USER'),
-        'PASSWORD': config('PASSWORD'),
-        'HOST': config('HOST'),
-        'PORT': config('PORT'),
+        'NAME': os.environ.get('NAME'),
+        'USER': os.environ.get('USER'),
+        'PASSWORD': os.environ.get('PASSWORD'),
+        'HOST': os.environ.get('HOST'),
+        'PORT': os.environ.get('PORT'),
     }
 }
 
