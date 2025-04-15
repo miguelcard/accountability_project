@@ -1,12 +1,12 @@
 setuptools==78.1.0
 cffi==1.17.1
 pycparser==2.22
-Django==4.2.20
+Django==5.2
 django-cors-headers==4.7.0
 django-simple-history==3.8.0
 djangorestframework==3.16.0
 psycopg==3.2.6
-django-rest-knox==4.2.0 #todo update
+django-rest-knox==5.0.2
 django-model-utils==4.5.1
 django.filter==25.1
 

@@ -27,7 +27,7 @@ services:
             - backend
 
     db:
-        image: postgres:13
+        image: postgres:17
         container_name: db
         environment: 
             - POSTGRES_DB=accountability
