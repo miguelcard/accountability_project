@@ -168,7 +168,7 @@ class GetAuthenticatedUserSerializer(serializers.ModelSerializer, UserGetAgeSeri
 class UsernameAndEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email')
+        fields = ('id', 'username')
         
         
 class CheckEmailSerializer(serializers.Serializer):
