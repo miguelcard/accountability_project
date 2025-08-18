@@ -35,9 +35,9 @@ class Space(models.Model):
         if(self.creator is not None):
             logger.info(f'user "{self.creator.username}" creating or editing space with name {self.name}') # id has not been assigned at this time
         else:
-            logger.info(f'space with name {self.name} being creatied or edited and has no creator')
+            logger.info(f'space with name {self.name} being created or edited and has no creator')
+        logger.info(f'number of existing_created_spaces_by_user: "{existing_created_spaces_by_user}"')
 
-        logger.info(f'existing_created_spaces_by_user: "{existing_created_spaces_by_user}"')
         if existing_created_spaces_by_user >= MAX_CREATED_SPACES_PER_USER:
             if(self.creator is not None):
                 logger.info(f'raising error for user "{self.creator.username}" when creating space with name {self.name} because he exceeds the maximum allowed created spaces')
@@ -68,7 +68,9 @@ class SpaceRole(models.Model):
     def __str__(self):
         return '[' + str(self.id) + '] ' + self.role + ' - '+ self.member.username +  ' ['+ str(self.member.id) +']' + ' - '+ self.space.name + ' ['+ str(self.space.id) +']'
     
-    # Documentation...
+    # This method is called during the saving of a SpaceRole (called from save() method)
+    # We check thatn newly created space roles ans check for both that the user does not exceed the number of spaces where he belongs
+    # and that the user does not exceed the number of spaces where he is a creator, a space role is also created when a user creates a space. 
     def clean(self):
         # Only enforce on *new* records (i.e. no self.pk / self.id yet)
         if not self.pk:

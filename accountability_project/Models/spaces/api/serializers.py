@@ -105,18 +105,17 @@ class SpaceRoleSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         user = self.extract_user_from_username_or_email(validated_data)
-        # self.check_number_of_spaces_where_user_belongs_orelse_thow_validation_error(user) TODO uncomment
+        self.check_number_of_spaces_where_user_belongs_orelse_thow_validation_error(user)
 
         space_role = SpaceRole.objects.create(member=user, **validated_data)  # Create SpaceRole with user instance
         return space_role
     
     def check_number_of_spaces_where_user_belongs_orelse_thow_validation_error(self, user):
-
         if user and user.spaceroles.count() >= SpaceRole.MAX_BELONGED_SPACES_PER_USER:
             logger.info(f'SpaceRole Serializer error: User may not be able to belong to more than "{SpaceRole.MAX_BELONGED_SPACES_PER_USER}" spaces, validation error is thrown')
             raise serializers.ValidationError({
                 'error': f'{user.username} has reached the limit of belonging to a maximum of '
-                          f'{SpaceRole.MAX_BELONGED_SPACES_PER_USER} spaces on the free tier. Therefore user can not be added to this space.'
+                          f'{SpaceRole.MAX_BELONGED_SPACES_PER_USER} spaces on the free tier. Therefore the user can not be added to this space.'
             })
     
     def extract_user_from_username_or_email(self, validated_data):
