@@ -16,6 +16,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from Models.spaces.api.permissions import BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser, IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly
 from rest_framework.exceptions import NotFound
+from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +36,19 @@ class SpacesApiView(generics.ListCreateAPIView):
     search_fields = ['name', 'tags__name', 'creator__username', 'tags__name', 'description', 'members__username', 'members__name']
 
     def get_queryset(self):
-        return Space.objects.annotate(members_count=Count('members', distinct=True)).annotate(habits_count=Count('space_habits', distinct=True)).filter(Q(creator=self.request.user) | Q(members=self.request.user)).prefetch_related('members')
+        return Space.objects.annotate(members_count=Count('members', distinct=True)).annotate(habits_count=Count('space_habits', distinct=True)).filter(Q(members=self.request.user)).prefetch_related('members')
 
     def perform_create(self, serializer):
         # adds logged in user as creator of the space
-        space = serializer.save(creator=self.request.user)
-        # creates a role connection of the user and space as admin
-        SpaceRole.objects.create(role='admin', member=self.request.user, space=space)
+        try:
+            space = serializer.save(creator=self.request.user)
+            logger.info(f'saving new created space {space.id}')
+            # creates a role connection of the user and space as admin
+            SpaceRole.objects.create(role='admin', member=self.request.user, space=space)
+        except ValidationError as error:
+            logger.info(f'space could not be created because it exceeds the max amount of spaces a user can create, user id: {self.request.user}')
+            raise DRFValidationError({"errors": error.message_dict})
+
         
 # GET (detailed) 
 class SpacesDetailRetrieveWithHabitsApiView(generics.RetrieveAPIView):
@@ -109,8 +117,10 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
         except SpaceRole.DoesNotExist:
             raise NotFound('User does not belong to the Space')
         
+        # TODO for now is not needed to pass the "admin" role to another user if the unlinked user was the ONLY admin 
+         
         space_role.delete()
-        logger.info(f'space role deleted for user with id: {user.id} uname: {user.username} and space with id: {space.id} name: {space.name}')
+        logger.info(f'space role deleted for user with id: {user.id} username: {user.username} and space with id: {space.id} name: {space.name}')
         self.unlink_habits(space, user, True)
 
         if not space.members.all():
@@ -118,18 +128,12 @@ class SpaceRoleDeleteApiView(generics.GenericAPIView):
             space.delete()
             # nothing else to do
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
-        #TODO be aware that this operation only changes the space creator, not the spacerole of any user from a member to an admin.
-        # if user is creator additionally replace him by next user in the space,  if no more users are in the space, delete whole space
+        
+
         if space.creator == self.request.user:
             logger.info(f'Removing the creator role from user with id: {user.id} username: {user.username} in the space with id: {space.id} name: {space.name}')
-            members_list = space.members.all()
-            for member in members_list:
-                if member is not user:
-                    space.creator = member
-                    logger.info(f'New creator role given to the user with id: {user.id} username: {user.username} in the space with id: {space.id} name: {space.name}')
-                    space.save()
-                    break
+            space.creator = None
+            space.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -157,6 +161,15 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
     """
     permission_classes = [IsAuthenticated, BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser]
     serializer_class = SpaceRoleSerializer
+
+    # throw custom error message to the GUI (but error is thrown first from the serializer in case in happens, this is build for extra security)
+    def perform_create(self, serializer):
+        try:
+            spaceRole = serializer.save()
+            logger.info(f'saving new space role for invited user {spaceRole.member.username} on space {spaceRole.space.id}')
+        except ValidationError as error:
+            logger.info(f'spaceRole could not be created because it invited user exceeds the max amount of spaces he can belong to')
+            raise DRFValidationError({"errors": error.message_dict})
 
 # PUT, PATCH
 class SpaceRoleEditApiView(generics.UpdateAPIView):

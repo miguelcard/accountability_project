@@ -72,29 +72,18 @@ class UsernameAndEmailSearchView(generics.ListAPIView):
     serializer_class = UsernameAndEmailSerializer
     pagination_class = GenericUserPagination
     filter_backends = [SearchFilter]
-    search_fields = ['username', 'email']
+    search_fields = ['username']
     queryset = User.objects.all()
     
-    # if the search query parameter is blank or it does not exist, do not show any result
     def filter_queryset(self, queryset):
-        search_query = self.request.query_params.get('search', None)
-        
-        if search_query is None or search_query.strip() == '':
+        search_query = self.request.query_params.get('search', '')
+        # if the search query parameter is blank or it does not exist, do not show any result
+        if not search_query.strip():
             return User.objects.none()
-
         queryset = super().filter_queryset(queryset)
 
-        # Create a Q object to filter based on username or email
-        username_q = Q(username__icontains=search_query)
-        email_q = Q(email__icontains=search_query)
-
-        # Apply the Q object to filter the queryset
-        queryset = queryset.filter(username_q | email_q)
-
-        # Sort the queryset based on whether the username or email contains the search parameter
-        queryset = sorted(queryset, key=lambda user: (search_query.lower() in user.username.lower(), search_query.lower() in user.email.lower()), reverse=True)
-        
-        return queryset
+        # return queryset;
+        return sorted(queryset, key=lambda user: (search_query.lower() in user.username.lower()), reverse=True)
     
     
     

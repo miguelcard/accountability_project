@@ -1,3 +1,4 @@
+import logging
 from django.db import models
 from django.db.models import fields
 from rest_framework import serializers
@@ -7,6 +8,8 @@ from Models.habits.models import BaseHabit, RecurrentHabit
 from Models.habits.api.serializers import GoalSerializerToRead, RecurrentHabitSerializerToRead
 from Models.users.models import User
 import re
+
+logger = logging.getLogger(__name__)
 
 class SimpleUserSerializer(serializers.ModelSerializer):
     """
@@ -101,18 +104,31 @@ class SpaceRoleSerializer(serializers.ModelSerializer):
         fields = ['username_email', 'role', 'space']
     
     def create(self, validated_data):
+        user = self.extract_user_from_username_or_email(validated_data)
+        self.check_number_of_spaces_where_user_belongs_orelse_thow_validation_error(user)
+
+        space_role = SpaceRole.objects.create(member=user, **validated_data)  # Create SpaceRole with user instance
+        return space_role
+    
+    def check_number_of_spaces_where_user_belongs_orelse_thow_validation_error(self, user):
+        if user and user.spaceroles.count() >= SpaceRole.MAX_BELONGED_SPACES_PER_USER:
+            logger.info(f'SpaceRole Serializer error: User may not be able to belong to more than "{SpaceRole.MAX_BELONGED_SPACES_PER_USER}" spaces, validation error is thrown')
+            raise serializers.ValidationError({
+                'error': f'{user.username} has reached the limit of belonging to a maximum of '
+                          f'{SpaceRole.MAX_BELONGED_SPACES_PER_USER} spaces on the free tier. Therefore the user can not be added to this space.'
+            })
+    
+    def extract_user_from_username_or_email(self, validated_data):
         username_email = validated_data.pop('username_email')  # Remove username from validated data
-        
+
         # distinguish if the the string sent is the user's username or email
         email_pattern = r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$'
         if re.match(email_pattern, username_email):
             user = User.objects.get(email=username_email)   # Get user instance by email
         else:
             user = User.objects.get(username=username_email)  # Get user instance by username
-        
-        space_role = SpaceRole.objects.create(member=user, **validated_data)  # Create SpaceRole with user instance
-        return space_role
-    
+        return user
+
 
 class SpaceRoleSerializerForEdition(serializers.ModelSerializer):
     """
