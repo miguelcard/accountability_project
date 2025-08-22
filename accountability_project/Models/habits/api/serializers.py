@@ -2,6 +2,7 @@ from Models.habits.models import Goal, RecurrentHabit, HabitTag, BaseHabit, Chec
 from rest_framework import serializers
 import datetime
 from rest_framework.exceptions import ParseError
+from Models.spaces.models import Space
 
 # Filters the Checkmarks or Milestones by Date, by default only the ones in the last 7 days are shown
 class FilteredListSerializer(serializers.ListSerializer):
@@ -48,6 +49,11 @@ class HabitTagSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
+    spaces = serializers.PrimaryKeyRelatedField(
+        many=True, 
+        queryset=Space.objects.all(),  # Add queryset for validation
+        required=False,
+    )
     class Meta:
         model = RecurrentHabit
         fields = '__all__'

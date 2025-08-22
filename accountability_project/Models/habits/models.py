@@ -13,8 +13,8 @@ class BaseHabit(models.Model):
     """ Abstract habit model extended by Goal and RecurrentHabit"""
     objects = InheritanceManager()
     owner = models.ForeignKey(User, related_name='habits', on_delete=models.CASCADE) 
-    tags = models.ManyToManyField('HabitTag', blank=True) 
-    spaces = models.ManyToManyField(Space, related_name='space_habits', blank=True)
+    tags = models.ManyToManyField('HabitTag', blank=True)
+    spaces = models.ManyToManyField(Space, through='BaseHabitSpace', related_name='space_habits', blank=True)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -25,12 +25,35 @@ class BaseHabit(models.Model):
         verbose_name = 'Base Habit'
         verbose_name_plural = 'Base Habits'
         ordering = ['-created_at']
-        db_table = 'base_habit'
+        db_table = 'habit'
 
     def __str__(self):
         """Unicode representation of MODELNAME."""
         return f'{self.id} - {self.title}'
     
+    # returns the first found space, useful for many to one relationship between habit and space.
+    @property
+    def space(self):
+        # returns None if none exists
+        return self.spaces.first()
+    
+# This is the join table between Habits and Spaces, which would normally represent a M2M relationship,
+# but for now we enforce a M2O relationship as the application does not need more, by setting the FK column referencing the Habit to be unique.
+# Maybe in the future this constraint can be dropped if we need a habit to belong to more than one space
+# Here we can also possibly add more data about this habit and this space, like when was the habit added to the space and so on
+class BaseHabitSpace(models.Model):
+    basehabit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
+    space = models.ForeignKey(Space, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'space_habit'
+        constraints = [
+            models.UniqueConstraint(fields=['basehabit'], name='unique_basehabit_one_space'),
+            models.UniqueConstraint(fields=['basehabit', 'space'], name='unique_basehabit_space_pair'), # this is a redundancy, it jus prevents duplicate rows with basehabit and space
+        ]
+    
+
 class RecurrentHabit(BaseHabit):
 
     TIME_FRAME_CHOICES = [
