@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from Models.habits.models import Goal, RecurrentHabit, HabitTag, BaseHabit, CheckMark, Milestone
 from rest_framework import serializers
 import datetime
@@ -61,6 +62,58 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
             "owner",
         )
     
+    # Method that catches the DB uniqueness/constraint failure (an IntegrityError) and handles it gracefully for the client
+    # This ensures that for now one habit can only belong to one space, while still having a join table between them. 
+    # It wraps the  creation + join table modifications in transaction.atomic() so a failed add() rolls back the created habit.
+    def create(self, validated_data):
+        spaces = validated_data.pop('spaces', [])
+        # all inside runs in a DB transaction
+        try:
+            with transaction.atomic():
+                habit = RecurrentHabit.objects.create(**validated_data) # creates habit row inside transaction
+                if spaces:
+                    try:
+                        habit.spaces.add(*spaces)  # attempts to create rows in the M2M join table. If the DB unique constraint is violated, the DB raises IntegrityError.
+                    except IntegrityError:
+                        raise ParseError("Each habit can be assigned to at most one space.")
+            return habit
+        except ParseError:
+            # re-raise so DRF handles it as a 400
+            raise
+        except Exception as exc:
+            # Optional: be conservative and convert unexpected DB integrity issues to a generic ValidationError
+            raise ParseError("Could not create habit.")
+
+
+    # comented for now, would only be needed if user could update a habit and change its space, and even if he could the DB constraint would throw an error.
+    # Same funcitonality as in the create method to allow only one space per habit, but in case client updates the habit
+    # the instance refers to the model instance, so this method would copy all the other attributes besided the spaces to the model instance
+    # and then would check the spaces constraint to either save a unique per habit or throw an error.
+    # def update(self, instance, validated_data):
+    #     spaces = validated_data.pop('spaces', None)
+
+    #     # copies all other attributes to model instance
+    #     for attr, value in validated_data.items():
+    #         setattr(instance, attr, value)
+
+    #     try:
+    #         with transaction.atomic():
+    #             instance.save()
+    #             if spaces is not None:
+    #                 try:
+    #                     instance.spaces.set(spaces)  # set() may also raise IntegrityError
+    #                 except IntegrityError:
+    #                     raise ParseError('Each habit can be assigned to at most one space.')
+    #         return instance
+    #     except ParseError:
+    #         # re-raise so DRF handles it as a 400
+    #         raise
+    #     except Exception as exc:
+    #         # Optional: be conservative and convert unexpected DB integrity issues to a generic ValidationError
+    #         raise ParseError("Could not update habit.")
+    
+    # implement similar behavioour in update method??
+
     def to_representation(self, instance):
         serializer = RecurrentHabitSerializerToRead(instance, context=self.context)
         return serializer.data
