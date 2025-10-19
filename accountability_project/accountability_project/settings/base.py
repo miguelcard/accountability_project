@@ -44,9 +44,9 @@ BASE_APPS = [
 ]
 
 LOCAL_APPS = [
-    'Models.users',
-    'Models.habits',
-    'Models.spaces',
+    'Models.users.apps.UsersConfig',
+    'Models.habits.apps.HabitsConfig',
+    'Models.spaces.apps.SpacesConfig',
 ]
 
 THIRD_APPS = [
