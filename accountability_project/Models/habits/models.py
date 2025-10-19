@@ -1,16 +1,17 @@
 from rest_framework import status
 from Models.users.models import User
 from Models.spaces.models import Space
-from django.db import models
+from django.db import models, transaction
 from model_utils.managers import InheritanceManager 
 import datetime
-from utils.exceptionhandlers import BusinessLogicConflict
+from utils.exceptionhandlers import BusinessLogicConflict, LimitReachedException
 
 
 # This Habit is an abstraction and the real implementation should be done either by recurrent habit or goal
 class BaseHabit(models.Model):
-
     """ Abstract habit model extended by Goal and RecurrentHabit"""
+    MAX_HABITS_PER_USER_PER_SPACE = 6
+
     objects = InheritanceManager()
     owner = models.ForeignKey(User, related_name='habits', on_delete=models.CASCADE) 
     tags = models.ManyToManyField('HabitTag', blank=True)
@@ -37,11 +38,13 @@ class BaseHabit(models.Model):
         # returns None if none exists
         return self.spaces.first()
     
-# This is the join table between Habits and Spaces, which would normally represent a M2M relationship,
-# but for now we enforce a M2O relationship as the application does not need more, by setting the FK column referencing the Habit to be unique.
-# Maybe in the future this constraint can be dropped if we need a habit to belong to more than one space
-# Here we can also possibly add more data about this habit and this space, like when was the habit added to the space and so on
 class BaseHabitSpace(models.Model):
+    """
+    This is the join table between Habits and Spaces, which would normally represent a M2M relationship,
+    but for now we enforce a M2O relationship as the application does not need more, by setting the FK column referencing the Habit to be unique.
+    Maybe in the future this constraint can be dropped if we need a habit to belong to more than one space
+    Here we can also possibly add more data about this habit and this space, like when was the habit added to the space and so on
+    """
     basehabit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE)
     space = models.ForeignKey(Space, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -52,6 +55,41 @@ class BaseHabitSpace(models.Model):
             models.UniqueConstraint(fields=['basehabit'], name='unique_basehabit_one_space'),
             models.UniqueConstraint(fields=['basehabit', 'space'], name='unique_basehabit_space_pair'), # this is a redundancy, it jus prevents duplicate rows with basehabit and space
         ]
+        
+    def clean(self):
+        owner = self.basehabit.owner
+        space_pk = self.space_id
+
+        # exclude this habit itself (works for create & update)
+        existing_habits_count = BaseHabit.objects.filter(
+            owner=owner,
+            spaces__pk=space_pk
+        ).exclude(pk=self.basehabit_id).count()
+
+        if existing_habits_count >= BaseHabit.MAX_HABITS_PER_USER_PER_SPACE:
+            # tie the error to a field or use non_field_errors
+            # This returns an ugly 500 error to the django admin, but thats ok for now
+            raise LimitReachedException (
+                code="FREE_HABIT_CREATE_LIMIT_REACHED", # maps with the frontend messages
+                current=existing_habits_count,
+                limit=BaseHabit.MAX_HABITS_PER_USER_PER_SPACE,
+                detail=f"User already has {existing_habits_count} habits in space {space_pk} (max {BaseHabit.MAX_HABITS_PER_USER_PER_SPACE}).",
+                instance=self,
+                status_code=403
+            )
+
+    def save(self, *args, **kwargs):
+        # Optional: wrap in atomic lock to reduce races (see notes below)
+        with transaction.atomic():
+            # Optionally acquire a row lock before counting to avoid a race condition.
+            # A common choice is to lock the owner user row as a coarse mutex:
+            # This lock just forces any other transaction that tries to use the same lock on that user, to wait until the whole transaction has been commited. (simply like a waiting point)
+            # This is simpler than locking specific habit rows that the user owns in that space because it can happen that there are not any (therefore we do not lock anything) and we have to take into account all edge cases.
+            # Const: possibly slower than blocking the habit rows.
+            User.objects.select_for_update().get(pk=self.basehabit.owner_id)
+            
+            self.full_clean()   # runs clean() and field validators
+            super().save(*args, **kwargs)
     
 
 class RecurrentHabit(BaseHabit):
