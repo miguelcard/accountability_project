@@ -30,22 +30,30 @@ class Space(models.Model):
     # This save method is called everytime a space is created or edited (saved)
     # Checks that the user creating one space (free tier) has not surpassed the limits of the maximum amout of spaces he can create MAX_CREATED_SPACES_PER_USER
     def save(self, *args, **kwargs):
-        # number of existing spaces where the user is already a creator:
-        existing_created_spaces_by_user = Space.objects.filter(creator=self.creator).count()
-        if(self.creator is not None):
-            logger.info(f'user "{self.creator.username}" creating or editing space with name {self.name}') # id has not been assigned at this time
-        else:
-            logger.info(f'space with name {self.name} being created or edited and has no creator')
-        logger.info(f'number of existing_created_spaces_by_user: "{existing_created_spaces_by_user}"')
+        # Only enforce the creation limit when creating a new Space (no primary key yet)
+        if not self.pk:
+            # number of existing spaces where the user is already a creator:
+            existing_created_spaces_by_user = Space.objects.filter(creator=self.creator).count()
+            if (self.creator is not None):
+                logger.info(f'user "{self.creator.username}" creating space with name {self.name}')
+            else:
+                logger.info(f'space with name {self.name} being created and has no creator')
+            logger.info(f'number of existing_created_spaces_by_user: "{existing_created_spaces_by_user}"')
 
-        if existing_created_spaces_by_user >= MAX_CREATED_SPACES_PER_USER:
-            if(self.creator is not None):
-                logger.info(f'raising error for user "{self.creator.username}" when creating space with name {self.name} because he exceeds the maximum allowed created spaces')
-            raise ValidationError({
-                    'creator': f'You’ve reached the limit of creating '
-                              f'{MAX_CREATED_SPACES_PER_USER} spaces on the free tier.\n You can still join spaces created by other users.'
-                })
-        
+            if existing_created_spaces_by_user >= MAX_CREATED_SPACES_PER_USER:
+                if (self.creator is not None):
+                    logger.info(f'raising error for user "{self.creator.username}" when creating space with name {self.name} because he exceeds the maximum allowed created spaces')
+                raise ValidationError({
+                        'creator': f'You’ve reached the limit of creating '
+                                  f'{MAX_CREATED_SPACES_PER_USER} spaces on the free tier.\n You can still join spaces created by other users.'
+                    })
+        else:
+            # Editing an existing space — do not enforce created-space limit
+            if (self.creator is not None):
+                logger.info(f'user "{self.creator.username}" editing space id {self.pk} with name {self.name}')
+            else:
+                logger.info(f'editing space id {self.pk} with name {self.name} and no creator')
+
         super(Space, self).save(*args, **kwargs)
 
 

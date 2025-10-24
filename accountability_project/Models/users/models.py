@@ -11,7 +11,9 @@ class UserManager(BaseUserManager):
     """custom user"""
 
     use_in_migrations = True
-
+    
+    
+# TODO can I just delete the name here without breaking changes in the frontend???
     def _create_user(self, username, email, name, password,  is_staff, is_superuser, **extra_fields):
         user = self.model(
             username = username,
