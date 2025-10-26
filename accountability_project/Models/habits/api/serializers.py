@@ -33,10 +33,23 @@ class FilteredListSerializer(serializers.ListSerializer):
         return super(FilteredListSerializer, self).to_representation(data)
 
 class CheckMarkNestedSerializer(serializers.ModelSerializer):
+    # this is only used to check the current client date.
+    client_date = serializers.DateField(required=False, write_only=True)
+    
     class Meta:
         list_serializer_class = FilteredListSerializer
         model = CheckMark
         fields = '__all__'
+        
+    def create(self, validated_data):
+        # Remove clientDate from validated_data as it's not a model field
+        client_date = validated_data.pop('client_date', None)
+        # Create the instance
+        instance = CheckMark(**validated_data)
+        # Call save with the client_date parameter
+        instance.save(client_date=client_date)
+        
+        return instance
 
 class MilestoneNestedSerializer(serializers.ModelSerializer):
     class Meta:
