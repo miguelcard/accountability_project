@@ -4,6 +4,7 @@ from Models.spaces.models import Space
 from django.db import models, transaction
 from model_utils.managers import InheritanceManager 
 import datetime
+from django.utils import timezone
 from utils.exceptionhandlers import BusinessLogicConflict, LimitReachedException
 
 
@@ -145,11 +146,17 @@ class CheckMark(models.Model):
     habit = models.ForeignKey(BaseHabit, on_delete=models.CASCADE, related_name="checkmarks")
 
     # Allow only one checkmark per day, i.e. delete any otheres that exist on the same day
-    def save(self, *args, **kwargs):
-        today = datetime.date.today()
-        if self.date > today and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
-            raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates') # Should it be enabled?
-        same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=self.date) 
+    def save(self, *args, client_date=None, **kwargs):
+        # client_date is the actual date in client's timezone
+        checkmark_date = self.date # is the date selected in the calendar for the checkmark
+        utc_now = timezone.now().date()
+        
+        # If client_date is provided, use it for future validation, otherwise just today in utc timezone.
+        validation_date = client_date if client_date else utc_now
+        
+        if checkmark_date > validation_date and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
+            raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates')
+        same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=checkmark_date) 
         if same_date_checkmarks.exists():
             same_date_checkmarks.delete()
         super(CheckMark, self).save(*args, **kwargs) 
