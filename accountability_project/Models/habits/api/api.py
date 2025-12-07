@@ -22,7 +22,7 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
     serializer_class = RecurrentHabitSerializerToRead
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filter_fields = ['title', 'time_frame', 'times', 'tags__name', 'spaces__name', 'spaces__id'] 
-    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'time_frame', 'times', 'tags__name']  
+    ordering_fields = ['id', 'title', 'created_at', 'updated_at', 'time_frame', 'times', 'tags__name', 'spaces__id']  
     search_fields = ['title', 'description', 'time_frame', 'times', 'tags__name', 'spaces__name'] 
 
     def get_queryset(self):
