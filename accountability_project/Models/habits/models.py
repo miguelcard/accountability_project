@@ -6,7 +6,9 @@ from model_utils.managers import InheritanceManager
 import datetime
 from django.utils import timezone
 from utils.exceptionhandlers import BusinessLogicConflict, LimitReachedException
+import logging
 
+logger = logging.getLogger(__name__)
 
 # This Habit is an abstraction and the real implementation should be done either by recurrent habit or goal
 class BaseHabit(models.Model):
@@ -147,14 +149,19 @@ class CheckMark(models.Model):
 
     # Allow only one checkmark per day, i.e. delete any otheres that exist on the same day
     def save(self, *args, client_date=None, **kwargs):
-        # client_date is the actual date in client's timezone
-        checkmark_date = self.date # is the date selected in the calendar for the checkmark
-        utc_now = timezone.now().date()
+        # client_date is the actual date in client's timezone but converted to current UTC
+        checkmark_date = self.date # is the date selected in the frontend calendar for the checkmark
+        utc_current_date = timezone.now().date()
         
         # If client_date is provided, use it for future validation, otherwise just today in utc timezone.
-        validation_date = client_date if client_date else utc_now
+        if client_date is None:
+        # Fallback: if no client_date provided, use UTC. But this should always be provided from frontend!
+            validation_date = utc_current_date
+            logger.warning("WARNING: No client_date provided, using UTC as fallback")
+        else:
+            validation_date = client_date
         
-        if checkmark_date > validation_date and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
+        if validation_date > utc_current_date and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
             raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates')
         same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=checkmark_date) 
         if same_date_checkmarks.exists():
