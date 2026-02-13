@@ -174,7 +174,7 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
 # PUT, PATCH
 class SpaceRoleEditApiView(generics.UpdateAPIView):
     """
-    admin roles of an Space can edit a member's role (update SpaceRole role)
+    admin roles of a Space can edit a member's role (update SpaceRole role)
     """
     permission_classes = [IsAuthenticated, IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly]
     serializer_class = SpaceRoleSerializer
