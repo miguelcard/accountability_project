@@ -281,7 +281,7 @@ class SpaceRolesListApiView(generics.ListAPIView):
 # GET
 class SpaceUsersApiView(generics.ListAPIView):
     """
-    Gets list of all the users from the Space.
+    Gets list of all the users from the Space with their spacerole information.
     """
     serializer_class = SimpleUserSerializer
     pagination_class = GenericPagination
@@ -300,7 +300,15 @@ class SpaceUsersApiView(generics.ListAPIView):
         logger.info(f' Get all users from space with id: {space_id}')
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
         logger.info(f' Retrieving all users for space with id: {space_id} and name: {space.name}')
-        return space.members.all()
+        # Prefetch spaceroles to optimize queries
+        return space.members.prefetch_related('spaceroles').all()
+    
+    def get_serializer_context(self):
+        """Add space to serializer context so spacerole can be included."""
+        context = super().get_serializer_context()
+        space_id = self.kwargs.get("space_pk")
+        context['space'] = get_object_or_404(Space, id=space_id, members=self.request.user)
+        return context
 
 # GET
 class CalendarAPIView(generics.ListAPIView):

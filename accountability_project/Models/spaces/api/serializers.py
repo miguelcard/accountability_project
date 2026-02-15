@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 class SimpleUserSerializer(serializers.ModelSerializer):
     """
-    Serializer to retrieve general information about the users belonging to the space, which other users can also see 
+    Serializer to retrieve general information about the users belonging to the space, which other users can also see.
+    If space context is provided, includes spacerole information for that specific space.
     """
+    spacerole = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
         fields = (
@@ -24,7 +27,8 @@ class SimpleUserSerializer(serializers.ModelSerializer):
             "avatar_seed",
             "email",
             "about",
-            "is_active"
+            "is_active",
+            "spacerole"
         )
         read_only_fields = (
             "id",
@@ -33,8 +37,37 @@ class SimpleUserSerializer(serializers.ModelSerializer):
             "avatar_seed",
             "email",
             "about",
-            "is_active"
+            "is_active",
+            "spacerole"
         )
+    
+    def get_spacerole(self, obj):
+        """
+        Returns the spacerole information for this user in the context space.
+        Returns None if no space context is provided.
+        """
+        space = self.context.get('space')
+        if not space:
+            return None
+        
+        # Use prefetched data if available, otherwise query
+        if hasattr(obj, '_spaceroles_cache'):
+            spaceroles = [sr for sr in obj._spaceroles_cache if sr.space_id == space.id]
+            spacerole = spaceroles[0] if spaceroles else None
+        else:
+            try:
+                spacerole = SpaceRole.objects.get(member=obj, space=space)
+            except SpaceRole.DoesNotExist:
+                return None
+        
+        if spacerole:
+            return {
+                "id": spacerole.id,
+                "role": spacerole.role,
+                "created_at": spacerole.created_at,
+                "updated_at": spacerole.updated_at
+            }
+        return None
         
         
 class SpaceSerializer(serializers.ModelSerializer):
