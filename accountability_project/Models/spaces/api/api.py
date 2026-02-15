@@ -21,6 +21,67 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 logger = logging.getLogger(__name__)
 
+
+class SpaceRoleCleanupMixin:
+    """
+    Mixin providing shared cleanup logic for SpaceRole deletion.
+    Handles unlinking habits, creator transfer, admin promotion, and empty space deletion.
+    """
+
+    def cleanup_space_role(self, space_role, delete_habits=True):
+        """
+        Performs cleanup after a SpaceRole is deleted:
+        - Unlinks/deletes user's habits from the space
+        - Promotes a random member to admin if last admin leaves
+        - Transfers creator if deleted user was creator
+        - Deletes space if no members remain
+        Returns True if space was deleted, False otherwise.
+        """
+        space = space_role.space
+        user = space_role.member
+        was_admin = space_role.role == 'admin'
+
+        space_role.delete()
+        logger.info(f'space role deleted for user with id: {user.id} username: {user.username} and space with id: {space.id} name: {space.name}')
+        
+        self._unlink_habits(space, user, delete_habits)
+
+        # Delete space if no members remain
+        if not space.members.exists():
+            logger.info(f'Deleting space which has no more members, space id: "{space.id}" space name: "{space.name}"')
+            space.delete()
+            return True
+
+        # Promote a random member to admin if no admins remain
+        if was_admin and not space.spaceroles.filter(role='admin').exists():
+            new_admin_role = space.spaceroles.first()
+            if new_admin_role:
+                # Use update() to avoid SpaceRole.save() deleting existing record
+                SpaceRole.objects.filter(pk=new_admin_role.pk).update(role='admin')
+                logger.info(f'Promoted user {new_admin_role.member.username} to admin in space {space.id} after last admin left')
+
+        # Transfer creator role if the removed user was the creator
+        if space.creator == user:
+            logger.info(f'Removing the creator role from user with id: {user.id} username: {user.username} in the space with id: {space.id} name: {space.name}')
+            space.creator = None
+            space.save()
+
+        return False
+
+    def _unlink_habits(self, space, user, delete_habits):
+        """Unlinks or deletes user's habits from the space."""
+        user_habits = user.habits.all()
+        space_habits = space.space_habits.all()
+        intersection_habits = list(set(user_habits).intersection(space_habits))
+
+        for habit in intersection_habits:
+            if delete_habits:
+                habit.delete()
+            else:
+                habit.spaces.remove(space)
+                habit.save()
+
+
 """ ---------views for Spaces--------"""
 
 # GET & POST
@@ -99,59 +160,25 @@ class SpaceHabitsApiView(generics.GenericAPIView):
         return response_data
             
    
-# DELETE
-class SpaceRoleDeleteApiView(generics.GenericAPIView):
+# DELETE (self-removal)
+class SpaceRoleDeleteApiView(SpaceRoleCleanupMixin, generics.GenericAPIView):
     """
-    Unlinks a user from a space by deleting the space role associated with it
-    also changes user if he was the creator of the space
-    unlinks all habits from that user in that space
-    deletes space IF the space has no more members in it
+    Allows a user to remove themselves from a space.
+    Also handles creator transfer and space cleanup.
+    Note: pk is the Space id, not the SpaceRole id.
     """
     @transaction.atomic
     def delete(self, request, pk=None):
         user = self.request.user
         space = get_object_or_404(Space, pk=pk)
         try:
-            # query if user is member
             space_role = SpaceRole.objects.get(space__id=space.id, member=user.id)
         except SpaceRole.DoesNotExist:
             raise NotFound('User does not belong to the Space')
         
         # TODO for now is not needed to pass the "admin" role to another user if the unlinked user was the ONLY admin 
-         
-        space_role.delete()
-        logger.info(f'space role deleted for user with id: {user.id} username: {user.username} and space with id: {space.id} name: {space.name}')
-        self.unlink_habits(space, user, True)
-
-        if not space.members.all():
-            logger.info(f'Deleting space which has no more members, space id: "{space.id}" space name: "{space.name}"')
-            space.delete()
-            # nothing else to do
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        
-
-        if space.creator == self.request.user:
-            logger.info(f'Removing the creator role from user with id: {user.id} username: {user.username} in the space with id: {space.id} name: {space.name}')
-            space.creator = None
-            space.save()
-
+        self.cleanup_space_role(space_role, delete_habits=True)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-    # The delete_habits tag is a boolean, when set to true, deletes the habit and its checkmarks, for now thats gonna be the behaviour to KISS
-    def unlink_habits(self, space, user, delete_habits):
-
-        user_habits = user.habits.all()
-        space_habits = space.space_habits.all()
-
-        intersection_habits = list(set(user_habits).intersection(space_habits))
-
-        for habit in intersection_habits:
-            if delete_habits:
-                habit.delete()
-                continue
-            habit.spaces.remove(space)
-            habit.save()
 
 # POST
 class SpaceRoleInviteApiView(generics.CreateAPIView):
@@ -172,9 +199,11 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
             raise DRFValidationError({"errors": error.message_dict})
 
 # PUT, PATCH
-class SpaceRoleEditApiView(generics.UpdateAPIView):
+class SpaceRoleEditApiView(generics.RetrieveUpdateAPIView):
     """
-    admin roles of a Space can edit a member's role (update SpaceRole role)
+    Admin roles of a Space can:
+    - GET: Retrieve a SpaceRole
+    - PUT/PATCH: Edit a member's role
     """
     permission_classes = [IsAuthenticated, IsSpaceAdminWhereSpaceRoleBelongsOrReadOnly]
     serializer_class = SpaceRoleSerializer
@@ -190,6 +219,45 @@ class SpaceRoleEditApiView(generics.UpdateAPIView):
         if self.request is not None and (self.request.method == 'PUT' or self.request.method == 'PATCH'):
             serializer_class = SpaceRoleSerializerForEdition
         return serializer_class
+
+
+# DELETE (admin removes another member)
+class SpaceMemberRemoveApiView(SpaceRoleCleanupMixin, generics.GenericAPIView):
+    """
+    Allows space admins to remove other members from the space.
+    DELETE /v1/spaces/{space_pk}/members/{user_pk}
+    
+    Habits are unlinked from the space but preserved as personal habits.
+    Handles admin promotion if last admin is removed, creator transfer, and empty space deletion.
+    Admins cannot remove themselves - they must use the self-removal endpoint.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def delete(self, request, space_pk=None, user_pk=None):
+        space = get_object_or_404(Space, pk=space_pk)
+        
+        # Check if request user is admin of this space
+        if not space.spaceroles.filter(member=request.user, role='admin').exists():
+            raise DRFValidationError({
+                "error": "You must be the admin of the Space to remove members."
+            })
+        
+        # Prevent admin from removing themselves
+        if user_pk == request.user.id:
+            raise DRFValidationError({
+                "error": "You cannot remove yourself from a space using this endpoint. "
+                         "Use the self-removal endpoint instead."
+            })
+        
+        # Find the SpaceRole for the target user
+        try:
+            space_role = SpaceRole.objects.get(space=space, member__id=user_pk)
+        except SpaceRole.DoesNotExist:
+            raise NotFound('User does not belong to this Space')
+        
+        self.cleanup_space_role(space_role, delete_habits=False)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 # GET
 class SpaceRolesListApiView(generics.ListAPIView):
