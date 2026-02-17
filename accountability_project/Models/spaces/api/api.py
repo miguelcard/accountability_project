@@ -99,8 +99,10 @@ class SpacesApiView(generics.ListCreateAPIView):
     def get_queryset(self):
         return Space.objects.annotate(members_count=Count('members', distinct=True)).annotate(habits_count=Count('space_habits', distinct=True)).filter(Q(members=self.request.user)).prefetch_related('members')
 
+    @transaction.atomic
     def perform_create(self, serializer):
         # adds logged in user as creator of the space
+        # Wrapped in transaction to ensure Space and SpaceRole are created together
         try:
             space = serializer.save(creator=self.request.user)
             logger.info(f'saving new created space {space.id}')
