@@ -6,9 +6,9 @@ django-cors-headers==4.7.0
 django-simple-history==3.8.0
 djangorestframework==3.16.0
 psycopg==3.2.6
-django-rest-knox==5.0.2
 django-model-utils==4.5.1
 django.filter==25.1
+firebase-admin==7.2.0
 
 # libraries for API documentation (just development)
 pyyaml==6.0.2

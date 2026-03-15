@@ -9,6 +9,8 @@ services:
             PASSWORD: "postgres"
             HOST: "db"
             PORT: "5432"
+            # Path to the Firebase service-account key inside the container
+            GOOGLE_APPLICATION_CREDENTIALS: "/code/backend/firebase-service-account.json"
         # restart: always
         command: python manage.py runserver 0.0.0.0:8000
         container_name: back

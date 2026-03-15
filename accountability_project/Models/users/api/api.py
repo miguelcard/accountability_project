@@ -1,7 +1,7 @@
 from django.http import request
 from rest_framework.permissions import IsAdminUser
 from Models.users.models import User, Tag, Language
-from Models.users.api.serializers import CheckEmailSerializer, CheckUsernameSerializer, UserSerializer, UserUpdatedFieldsWithoutPasswordSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer, UsernameAndEmailSerializer
+from Models.users.api.serializers import CheckEmailSerializer, CheckUsernameSerializer, UserSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer, UsernameAndEmailSerializer
 from rest_framework import status, generics, mixins 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -11,7 +11,7 @@ from django.db.models import Q
 from rest_framework import permissions
 
 class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = UserUpdatedFieldsWithoutPasswordSerializer 
+    serializer_class = UserSerializer
 
     def get_object(self):
         return self.request.user
@@ -22,8 +22,8 @@ class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_serializer_class(self):
-        if(self.request is not None and self.request.method == 'PUT'):
-            return UserUpdatedFieldsWithoutPasswordSerializer
+        if self.request is not None and self.request.method == 'PUT':
+            return UserSerializer
         return GetAuthenticatedUserSerializer
 
 class GetAllUserTagsApiView(generics.ListAPIView):
@@ -52,9 +52,8 @@ class UsersAdminApiView(generics.GenericAPIView,
          
 
     def get_serializer_class(self):
-        print("request: ", self.request)
-        if(self.request.method == 'PUT'):
-            return UserUpdatedFieldsWithoutPasswordSerializer
+        if self.request.method == 'PUT':
+            return UserSerializer
         return UserSerializer 
     
 # This API is available to Admins only to perform operations on a single User

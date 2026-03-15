@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 import os
 from pathlib import Path
-from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,14 +46,13 @@ LOCAL_APPS = [
     'Models.users.apps.UsersConfig',
     'Models.habits.apps.HabitsConfig',
     'Models.spaces.apps.SpacesConfig',
+    'firebase.apps.FirebaseConfig',
 ]
 
 THIRD_APPS = [
     'corsheaders',
     'rest_framework',
-    'rest_framework.authtoken',
     'simple_history',
-    'knox',
     'django_filters',
     'drf_spectacular',
 ]
@@ -132,6 +130,7 @@ AUTH_USER_MODEL = 'users.User'
 
 CORS_ALLOW_CREDENTIALS = True
 
+# Set to false on production and specify allowed origins explicitly (see below)
 CORS_ALLOW_ALL_ORIGINS = True
 
 ##CORS
@@ -157,9 +156,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'static/media/')
 REST_FRAMEWORK = {
     # Default authentication for all views 
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'rest_framework.authentication.BasicAuthentication',
-        # 'rest_framework.authentication.SessionAuthentication', # comment this one? Only needed for roing rest operations in the GUI
-        'Models.users.auth_utils.TokenAuthSupportCookie'
+        'firebase.authentication.FirebaseAuthentication',
     ],
     # Schema for API Documentation
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -172,9 +169,4 @@ REST_FRAMEWORK = {
     # 'PAGE_SIZE': 15
 }
 
-# Knox Tokens Settings 
-REST_KNOX = {
-  'TOKEN_TTL': timedelta(hours=168),
-  'AUTO_REFRESH': True,
-}
 
