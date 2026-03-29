@@ -9,6 +9,7 @@ psycopg==3.2.6
 django-model-utils==4.5.1
 django.filter==25.1
 firebase-admin==7.2.0
+django-ratelimit==4.1.0
 
 # libraries for API documentation (just development)
 pyyaml==6.0.2

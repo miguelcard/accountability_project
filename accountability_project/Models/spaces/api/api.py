@@ -18,6 +18,8 @@ from Models.spaces.api.permissions import BelongsToSpaceFromSpaceRole, HasEqualO
 from rest_framework.exceptions import NotFound
 from django.core.exceptions import ValidationError
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +89,8 @@ class SpaceRoleCleanupMixin:
 # GET & POST
 class SpacesApiView(generics.ListCreateAPIView):
     """
-    Lists Spaces where current user belongs and Creates Spaces with current user as creator
+    Lists Spaces where current user belongs and Creates Spaces with current user as creator.
+    POST is rate-limited to 5 requests per IP per hour to prevent anonymous spam.
     """
     serializer_class = SpaceSerializer
     pagination_class = SpacesPagination
@@ -98,6 +101,28 @@ class SpacesApiView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Space.objects.annotate(members_count=Count('members', distinct=True)).annotate(habits_count=Count('space_habits', distinct=True)).filter(Q(members=self.request.user)).prefetch_related('members')
+
+    @method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=False))
+    def post(self, request, *args, **kwargs):
+        """Override post to apply IP-based rate limiting on space creation."""
+        # django-ratelimit sets request.limited = True when rate is exceeded
+        if getattr(request, 'limited', False):
+            logger.warning(
+                'Rate limit exceeded for space creation. ip=%s user=%s',
+                self._get_client_ip(request),
+                request.user,
+            )
+            return Response(
+                {
+                    'detail': 'Too many space creation requests. Please try again later.',
+                    'error': {
+                        'code': 'RATE_LIMIT_EXCEEDED',
+                        'meta': {'limit': 5, 'window': '1 hour'},
+                    },
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        return super().post(request, *args, **kwargs)
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -111,6 +136,14 @@ class SpacesApiView(generics.ListCreateAPIView):
         except ValidationError as error:
             logger.info(f'space could not be created because it exceeds the max amount of spaces a user can create, user id: {self.request.user}')
             raise DRFValidationError({"errors": error.message_dict})
+
+    @staticmethod
+    def _get_client_ip(request) -> str:
+        """Extract client IP, respecting X-Forwarded-For from reverse proxies."""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', 'unknown')
 
         
 # GET (detailed) 

@@ -28,6 +28,15 @@ DATABASES = {
 }
 
 
+# Cache backend — Redis for production (used by django-ratelimit)
+# The 'redis' hostname matches the Docker Compose service name
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/1'),
+    }
+}
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 

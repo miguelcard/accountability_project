@@ -66,6 +66,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'firebase.app_check_middleware.FirebaseAppCheckMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
@@ -142,6 +143,22 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"http://localhost:3000",
 ]
 
+# Allow the custom App Check header in CORS preflight responses
+CORS_ALLOW_HEADERS = [
+    # django-cors-headers defaults:
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    # Custom header for Firebase App Check:
+    "x-firebase-appcheck",
+]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
@@ -168,5 +185,32 @@ REST_FRAMEWORK = {
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # 'PAGE_SIZE': 15
 }
+
+# ──────────────────────────────────────────────────────────────
+# Firebase App Check
+# ──────────────────────────────────────────────────────────────
+# "monitoring" = log but allow requests without valid tokens (safe for rollout)
+# "enforced"  = reject requests without valid tokens (enable once stable)
+FIREBASE_APP_CHECK_ENFORCEMENT = os.environ.get('FIREBASE_APP_CHECK_ENFORCEMENT', 'monitoring')
+
+# ──────────────────────────────────────────────────────────────
+# Cache backend (used by django-ratelimit)
+# ──────────────────────────────────────────────────────────────
+# LocMemCache is fine for single-process local dev.
+# TODO For production with multiple workers, switch to Redis:
+#   'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#   'LOCATION': 'redis://127.0.0.1:6379/1',
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'ratelimit-cache',
+    }
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rate Limiting (django-ratelimit)
+# ──────────────────────────────────────────────────────────────
+# Use the default cache for rate limiting
+RATELIMIT_USE_CACHE = 'default'
 
 
