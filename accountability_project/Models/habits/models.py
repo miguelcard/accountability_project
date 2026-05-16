@@ -115,6 +115,46 @@ class RecurrentHabit(BaseHabit):
         ordering = ['-created_at']
         db_table = 'recurrent_habit'
 
+class RecurrentHabitConfigHistory(models.Model):
+    """
+    Immutable audit log of every (times, time_frame) configuration for a
+    RecurrentHabit.  One row is created when the habit is first created and
+    another row each time times or time_frame is changed.
+
+    XP evaluation always looks up the row where effective_from <= period_start
+    (most-recent match) so past periods are always judged under the rules that
+    were active when they ran.
+    """
+    habit        = models.ForeignKey(
+        RecurrentHabit,
+        on_delete=models.CASCADE,
+        related_name='config_history',
+    )
+    times        = models.IntegerField()
+    time_frame   = models.CharField(max_length=1, choices=RecurrentHabit.TIME_FRAME_CHOICES)
+    effective_from = models.DateField(
+        help_text='First day on which this config applies (inclusive).'
+    )
+
+    class Meta:
+        verbose_name        = 'Recurrent Habit Config History'
+        verbose_name_plural = 'Recurrent Habit Config Histories'
+        db_table            = 'recurrent_habit_config_history'
+        ordering            = ['-effective_from']
+        constraints         = [
+            models.UniqueConstraint(
+                fields=['habit', 'effective_from'],
+                name='unique_config_per_habit_per_day',
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f'Habit {self.habit_id} | {self.time_frame} ×{self.times} '
+            f'from {self.effective_from}'
+        )
+
+
 class Goal(BaseHabit):
 
     start_date = models.DateField(default=datetime.date.today, blank=True, null=True)
@@ -163,10 +203,14 @@ class CheckMark(models.Model):
         
         if validation_date > utc_current_date and self.status != 'UNDEFINED' and self.status != 'NOT_PLANNED':
             raise BusinessLogicConflict(detail='statuses DONE and NOT_DONE can not be set for future dates')
-        same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=checkmark_date) 
+        same_date_checkmarks = CheckMark.objects.filter(habit=self.habit, date=checkmark_date)
+        if self.pk:
+            # Updating an existing checkmark — exclude self so we don't delete-and-recreate it,
+            # which would change its PK and cause stale-ID 404s on the frontend.
+            same_date_checkmarks = same_date_checkmarks.exclude(pk=self.pk)
         if same_date_checkmarks.exists():
             same_date_checkmarks.delete()
-        super(CheckMark, self).save(*args, **kwargs) 
+        super(CheckMark, self).save(*args, **kwargs)
     
     class Meta:
         verbose_name = 'Check Mark'
@@ -208,3 +252,57 @@ class HabitTag(models.Model):
         verbose_name_plural = 'Habit Tags'
         ordering = ['name']
         db_table = 'habit_tag'
+
+
+class UserXPLedger(models.Model):
+    """
+    Append-only XP ledger — one row per (user, habit, period_start).
+
+    XP is never modified after being awarded; total_xp = SUM(xp_awarded).
+    On habit deletion the FK becomes NULL so historical XP is preserved.
+    habit_title_snap captures the title at award time for display purposes.
+    """
+
+    REASON_CHOICES = [
+        ('WEEKLY_HABIT',  'Weekly habit completion'),
+        ('MONTHLY_HABIT', 'Monthly habit completion'),
+        ('MILESTONE',     'Goal milestone reached'),
+    ]
+
+    user             = models.ForeignKey(User, on_delete=models.CASCADE, related_name='xp_ledger')
+    habit            = models.ForeignKey(BaseHabit, on_delete=models.SET_NULL, null=True, blank=True, related_name='xp_entries')
+    habit_title_snap = models.CharField(max_length=100, blank=True, default='')
+    period_start     = models.DateField(help_text='First day (Monday or 1st of month) of the completed period')
+    xp_awarded       = models.PositiveIntegerField()
+    streak_at_award  = models.PositiveIntegerField(default=0, help_text='Streak length (in periods) at the time of award')
+    multiplier       = models.DecimalField(max_digits=3, decimal_places=1, default=1.0)
+    reason           = models.CharField(max_length=15, choices=REASON_CHOICES)
+    awarded_at       = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'User XP Ledger Entry'
+        verbose_name_plural = 'User XP Ledger Entries'
+        db_table = 'user_xp_ledger'
+        ordering = ['-period_start']
+        constraints = [
+            # Prevent double-awarding for the same habit in the same period.
+            # Only applied when habit is NOT NULL; once a habit is deleted the
+            # constraint no longer applies to those (now-null) rows.
+            models.UniqueConstraint(
+                fields=['user', 'habit', 'period_start'],
+                condition=models.Q(habit__isnull=False),
+                name='unique_xp_per_habit_per_period',
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        # Snapshot the habit title when first creating the entry
+        if not self.pk and self.habit and not self.habit_title_snap:
+            self.habit_title_snap = self.habit.title
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f'[{self.user_id}] {self.habit_title_snap or "deleted habit"} | '
+            f'{self.period_start} | +{self.xp_awarded} XP (×{self.multiplier})'
+        )

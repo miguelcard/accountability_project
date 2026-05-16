@@ -1,8 +1,9 @@
 from django.urls import path
-from Models.users.api.api import LoggedInUserApiView, UsernameAndEmailSearchView, UsersAdminApiView, SingleUserAdminApiView, GetAllUserTagsApiView, GetAllUserLanguagesApiView, CheckEmailUsernameView
+from Models.users.api.api import LoggedInUserApiView, UsernameAndEmailSearchView, UsersAdminApiView, SingleUserAdminApiView, GetAllUserTagsApiView, GetAllUserLanguagesApiView, CheckEmailUsernameView, XPStatsView
 
 urlpatterns = [
     path('v1/user/', LoggedInUserApiView.as_view(), name='user'),
+    path('v1/user/xp-stats/', XPStatsView.as_view(), name='user-xp-stats'),
     path('v1/users/tags/', GetAllUserTagsApiView.as_view()),
     path('v1/users/languages/', GetAllUserLanguagesApiView.as_view()),
     path('v1/admin/users/', UsersAdminApiView.as_view()), # Only visible to admins

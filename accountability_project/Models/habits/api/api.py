@@ -1,6 +1,7 @@
 from rest_framework.exceptions import NotFound
 from Models.habits.api.serializers import RecurrentHabitSerializerToPatch, RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite, HabitTagSerializer, CheckMarkNestedSerializer, MilestoneNestedSerializer
 from Models.habits.models import BaseHabit, RecurrentHabit, Goal, HabitTag, CheckMark, Milestone
+from django.db.models import Prefetch
 from rest_framework import generics, status, views
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -26,7 +27,19 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
     search_fields = ['title', 'description', 'time_frame', 'times', 'tags__name', 'spaces__name'] 
 
     def get_queryset(self):
-        return RecurrentHabit.objects.filter(owner=self.request.user.id)
+        return (
+            RecurrentHabit.objects.filter(owner=self.request.user.id)
+            .prefetch_related(
+                # Pre-filter only DONE checkmarks for streak computation — avoids N+1 in _compute_streak
+                Prefetch(
+                    'checkmarks',
+                    queryset=CheckMark.objects.filter(status='DONE'),
+                    to_attr='done_checkmarks',
+                ),
+                'tags',
+                'spaces',
+            )
+        )
 
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'POST'):
@@ -42,7 +55,18 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RecurrentHabitSerializerToWrite
 
     def get_queryset(self):
-        return RecurrentHabit.objects.filter(owner=self.request.user.id)
+        return (
+            RecurrentHabit.objects.filter(owner=self.request.user.id)
+            .prefetch_related(
+                Prefetch(
+                    'checkmarks',
+                    queryset=CheckMark.objects.filter(status='DONE'),
+                    to_attr='done_checkmarks',
+                ),
+                'tags',
+                'spaces',
+            )
+        )
 
     def get_serializer_class(self):
         if(self.request is not None and self.request.method == 'GET'):

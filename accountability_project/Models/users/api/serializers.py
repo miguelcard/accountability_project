@@ -82,3 +82,23 @@ class CheckEmailSerializer(serializers.Serializer):
 
 class CheckUsernameSerializer(serializers.Serializer):
     username = serializers.CharField(required=False)
+
+
+# ── XP Stats ─────────────────────────────────────────────────────────────────
+
+class XPHeatmapEntrySerializer(serializers.Serializer):
+    """One cell of the heatmap — week/month start date and total XP earned."""
+    period_start = serializers.DateField()
+    xp           = serializers.IntegerField()
+
+
+class XPStatsSerializer(serializers.Serializer):
+    """Full XP stats payload returned by GET /api/v1/user/xp-stats/"""
+    total_xp              = serializers.IntegerField()
+    level                 = serializers.IntegerField()
+    xp_into_level         = serializers.IntegerField(help_text='XP accumulated since reaching current level')
+    xp_for_level          = serializers.IntegerField(help_text='XP gap required to advance to next level')
+    pct_to_next           = serializers.FloatField(help_text='Progress 0.0–1.0')
+    longest_streak        = serializers.IntegerField(help_text='Longest single-habit streak ever (in periods)')
+    completed_periods     = serializers.IntegerField(help_text='Total number of periods where at least one habit was completed')
+    heatmap               = XPHeatmapEntrySerializer(many=True)

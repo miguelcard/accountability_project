@@ -1,8 +1,7 @@
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from rest_framework.exceptions import ParseError
-from django.db.models.signals import post_save
-from Models.habits.models import BaseHabit
+from Models.habits.models import BaseHabit, CheckMark, RecurrentHabit
 from utils.exceptionhandlers import LimitReachedException
 
 
@@ -59,3 +58,43 @@ def enforce_max_habits_per_space(sender, instance, action, pk_set, **kwargs):
 #             instance=instance,
 #             status_code=403
 #         )
+
+
+# ─── XP Award ────────────────────────────────────────────────────────────────
+# After a CheckMark is saved we attempt to award XP for the completed period.
+# try_award_xp_for_checkmark is idempotent: it only creates a ledger row once
+# and only when the period has fully closed and the habit target is met.
+@receiver(post_save, sender=CheckMark)
+def award_xp_on_checkmark_save(sender, instance, **kwargs):
+    try:
+        from Models.habits.xp_utils import try_award_xp_for_checkmark
+        try_award_xp_for_checkmark(instance)
+    except Exception:
+        # Never let XP logic crash a checkmark save
+        import logging
+        logging.getLogger(__name__).exception(
+            'XP award failed for checkmark %s', instance.pk
+        )
+
+
+# ─── Config History ───────────────────────────────────────────────────────────
+# When a RecurrentHabit is first created, record its initial config snapshot.
+# This is a safety-net: the serializer create() path also does this, but this
+# signal covers any creation path (admin, management commands, tests, etc.).
+@receiver(post_save, sender=RecurrentHabit)
+def create_initial_config_history(sender, instance, created, **kwargs):
+    if not created:
+        return
+    try:
+        import datetime
+        from Models.habits.models import RecurrentHabitConfigHistory
+        RecurrentHabitConfigHistory.objects.get_or_create(
+            habit          = instance,
+            effective_from = datetime.date.min,  # covers any backdated checkmarks
+            defaults       = dict(times=instance.times, time_frame=instance.time_frame),
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Failed to create initial config history for habit %s', instance.pk
+        )

@@ -1,10 +1,11 @@
 from django.db import IntegrityError, transaction
-from Models.habits.models import Goal, RecurrentHabit, HabitTag, BaseHabit, CheckMark, Milestone
+from Models.habits.models import Goal, RecurrentHabit, RecurrentHabitConfigHistory, HabitTag, BaseHabit, CheckMark, Milestone
 from rest_framework import serializers
 import datetime
 from rest_framework.exceptions import ParseError, APIException
 from Models.spaces.models import Space
 from utils.exceptionhandlers import LimitReachedException
+from django.utils import timezone
 # Filters the Checkmarks or Milestones by Date, by default only the ones in the last 7 days are shown
 class FilteredListSerializer(serializers.ListSerializer):
 
@@ -145,34 +146,62 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
                 )
             
     
-    # comented for now, would only be needed if user could update a habit and change its space in the front end, and even if he could the DB constraint would throw an error.
-    # This method would have the same funcitonality as in the create method above to allow only one space per habit, but in case client updates the habit and changes its space.
-    # the instance refers to the model instance, so this method would copy all the other attributes besided the spaces to the model instance
-    # and then would check the spaces constraint to either save a unique per habit or throw an error.
-    # This is not called when we change the model level BaseHabitSpace 
-    # def update(self, instance, validated_data):
-    #     spaces = validated_data.pop('spaces', None)
+    def update(self, instance, validated_data):
+        """
+        Override DRF's default update to:
+        1. Detect changes to `times` or `time_frame`.
+        2. If either changes: settle all un-awarded past periods under the OLD
+           config *before* saving the new values, then record a new
+           RecurrentHabitConfigHistory row so future XP evaluation knows when
+           the config changed.
+        All of this runs inside a single atomic transaction.
+        """
+        from Models.habits.xp_utils import settle_habit_xp_before_config_change
 
-    #     # copies all other attributes to model instance
-    #     for attr, value in validated_data.items():
-    #         setattr(instance, attr, value)
+        spaces = validated_data.pop('spaces', None)
 
-    #     try:
-    #         with transaction.atomic():
-    #             instance.save()
-    #             if spaces is not None:
-    #                 try:
-    #                     instance.spaces.set(spaces)  # set() may also raise IntegrityError
-    #                 except IntegrityError:
-    #                     raise ParseError('Each habit can be assigned to at most one space.')
-    #         return instance
-    #     except ParseError:
-    #         # re-raise so DRF handles it as a 400
-    #         raise
-    #     except Exception as exc:
-    #         # Optional: be conservative and convert unexpected DB integrity issues to a generic ValidationError
-    #         raise ParseError("Could not update habit.")
-        
+        old_times      = instance.times
+        old_time_frame = instance.time_frame
+        new_times      = validated_data.get('times', old_times)
+        new_time_frame = validated_data.get('time_frame', old_time_frame)
+
+        config_changed = (new_times != old_times) or (new_time_frame != old_time_frame)
+
+        try:
+            with transaction.atomic():
+                if config_changed:
+                    # Settle un-awarded past periods under the OLD config first
+                    settle_habit_xp_before_config_change(instance, old_times, old_time_frame)
+
+                # Apply field updates to the instance
+                for attr, value in validated_data.items():
+                    setattr(instance, attr, value)
+                instance.save()
+
+                if config_changed:
+                    # update_or_create: if the user changes config twice in one
+                    # day, the second change correctly overwrites the first
+                    # row rather than silently keeping the stale first value.
+                    RecurrentHabitConfigHistory.objects.update_or_create(
+                        habit          = instance,
+                        effective_from = datetime.date.today(),
+                        defaults       = dict(times=new_times, time_frame=new_time_frame),
+                    )
+
+                if spaces is not None:
+                    try:
+                        instance.spaces.set(spaces)
+                    except IntegrityError:
+                        raise ParseError('Each habit can be assigned to at most one space.')
+
+            return instance
+        except ParseError:
+            raise
+        except (serializers.ValidationError, APIException):
+            raise
+        except Exception:
+            raise ParseError('Could not update habit.')
+
 
 
     def to_representation(self, instance):
@@ -187,9 +216,97 @@ class RecurrentHabitSerializerToPatch(RecurrentHabitSerializerToWrite):
     title = serializers.CharField(required=False)
 
 
+def _compute_streak(habit: RecurrentHabit) -> dict:
+    """
+    Returns {"count": <int>, "unit": "W"|"M"} for a RecurrentHabit.
+
+    Weekly (time_frame="W"):
+        A period is the Mon–Sun week.
+        A period is "complete" when the number of DONE checkmarks in that week >= habit.times.
+    Monthly (time_frame="M"):
+        A period is the calendar month.
+        A period is "complete" when the number of DONE checkmarks in that month >= habit.times.
+
+    Algorithm:
+        1. Start from the current period.
+        2. If the current period is complete, count it and move to the previous one.
+        3. If the current period is NOT yet complete, move to the previous one without counting.
+        4. Continue backwards until a period is not complete — streak ends.
+    """
+    today = timezone.now().date()
+    time_frame = habit.time_frame
+    required = habit.times
+
+    # Use pre-fetched done_checkmarks when available (set via Prefetch to_attr in get_queryset)
+    # to avoid an extra DB query per habit (N+1). Falls back to a live query when the
+    # serializer is called outside of a prefetch context (e.g. SpaceHabitsApiView).
+    if hasattr(habit, 'done_checkmarks'):
+        done_dates = {cm.date for cm in habit.done_checkmarks}
+    else:
+        done_dates = set(
+            habit.checkmarks.filter(status='DONE').values_list('date', flat=True)
+        )
+
+    def week_bounds(d: datetime.date):
+        """Return (monday, sunday) for the week containing d."""
+        monday = d - datetime.timedelta(days=d.weekday())
+        sunday = monday + datetime.timedelta(days=6)
+        return monday, sunday
+
+    def month_bounds(d: datetime.date):
+        """Return (first_day, last_day) for the month containing d."""
+        first = d.replace(day=1)
+        # last day: go to next month, subtract one day
+        if d.month == 12:
+            last = datetime.date(d.year + 1, 1, 1) - datetime.timedelta(days=1)
+        else:
+            last = datetime.date(d.year, d.month + 1, 1) - datetime.timedelta(days=1)
+        return first, last
+
+    def prev_period_start(start: datetime.date) -> datetime.date:
+        """Return a date that falls inside the period immediately before the one starting at start."""
+        return start - datetime.timedelta(days=1)
+
+    def period_done_count(start: datetime.date, end: datetime.date) -> int:
+        return sum(1 for d in done_dates if start <= d <= end)
+
+    streak = 0
+    anchor = today
+    first_period = True
+
+    while True:
+        if time_frame == 'W':
+            start, end = week_bounds(anchor)
+        else:  # 'M'
+            start, end = month_bounds(anchor)
+
+        count = period_done_count(start, end)
+        is_complete = count >= required
+
+        if first_period:
+            first_period = False
+            if is_complete:
+                streak += 1
+            else:
+                # Current period incomplete — check previous period
+                anchor = prev_period_start(start)
+                continue
+
+        else:
+            if is_complete:
+                streak += 1
+            else:
+                break  # streak broken
+
+        anchor = prev_period_start(start)
+
+    return {"count": streak, "unit": time_frame}
+
+
 class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
     checkmarks = CheckMarkNestedSerializer(many=True, read_only=True)
+    streak = serializers.SerializerMethodField()
 
     class Meta:
         model = RecurrentHabit
@@ -197,6 +314,9 @@ class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
         read_only_fields = (
             "owner",
         )
+
+    def get_streak(self, obj):
+        return _compute_streak(obj)
     
 class GoalSerializerToWrite(serializers.ModelSerializer):
     class Meta:
