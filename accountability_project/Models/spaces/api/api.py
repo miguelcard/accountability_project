@@ -1,5 +1,5 @@
 import logging
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from rest_framework import generics, status
@@ -8,6 +8,7 @@ from Models.users.models import User
 from Models.spaces.api.serializers import SimpleUserSerializer, SpaceSerializer, SpaceSerializerToReadWithHabitsAndMembers, SpaceRoleSerializer, SpaceRoleSerializerForEdition
 from django.db.models import Q
 from Models.spaces.api.pagination import SpacesPagination, SpaceHabitsPagination, GenericPagination
+from Models.habits.models import CheckMark, RecurrentHabitConfigHistory
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from Models.habits.models import BaseHabit

@@ -1,6 +1,6 @@
 from rest_framework.exceptions import NotFound
 from Models.habits.api.serializers import RecurrentHabitSerializerToPatch, RecurrentHabitSerializerToRead, RecurrentHabitSerializerToWrite, GoalSerializerToRead, GoalSerializerToWrite, HabitTagSerializer, CheckMarkNestedSerializer, MilestoneNestedSerializer
-from Models.habits.models import BaseHabit, RecurrentHabit, Goal, HabitTag, CheckMark, Milestone
+from Models.habits.models import BaseHabit, RecurrentHabit, RecurrentHabitConfigHistory, Goal, HabitTag, CheckMark, Milestone
 from django.db.models import Prefetch
 from rest_framework import generics, status, views
 from rest_framework.response import Response
@@ -36,6 +36,10 @@ class RecurrentHabitApiView(generics.ListCreateAPIView):
                     queryset=CheckMark.objects.filter(status='DONE'),
                     to_attr='done_checkmarks',
                 ),
+                Prefetch(
+                    'config_history',
+                    queryset=RecurrentHabitConfigHistory.objects.order_by('effective_from'),
+                ),
                 'tags',
                 'spaces',
             )
@@ -62,6 +66,10 @@ class RecurrentHabitDetailApiView(generics.RetrieveUpdateDestroyAPIView):
                     'checkmarks',
                     queryset=CheckMark.objects.filter(status='DONE'),
                     to_attr='done_checkmarks',
+                ),
+                Prefetch(
+                    'config_history',
+                    queryset=RecurrentHabitConfigHistory.objects.order_by('effective_from'),
                 ),
                 'tags',
                 'spaces',
@@ -133,7 +141,11 @@ class AllHabitsApiView(generics.GenericAPIView):
             try:
                 habit = get_object_or_404(BaseHabit, owner=self.request.user, pk=pk)
                 if habit.type == 'recurrent':
-                    habit_specific = get_object_or_404(RecurrentHabit, owner=self.request.user, pk=pk)
+                    habit_specific = RecurrentHabit.objects.filter(owner=self.request.user, pk=pk).prefetch_related(
+                        Prefetch('checkmarks', queryset=CheckMark.objects.filter(status='DONE'), to_attr='done_checkmarks'),
+                        Prefetch('config_history', queryset=RecurrentHabitConfigHistory.objects.order_by('effective_from')),
+                        'tags', 'spaces',
+                    ).get()
                     habit_serializer = RecurrentHabitSerializerToRead(habit_specific, context=context)
                 elif habit.type == 'goal':
                     habit_specific = get_object_or_404(Goal, owner=self.request.user, pk=pk)

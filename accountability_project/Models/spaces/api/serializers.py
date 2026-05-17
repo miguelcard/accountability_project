@@ -114,15 +114,15 @@ class SpaceSerializerToReadWithHabitsAndMembers(serializers.ModelSerializer):
         )
     
     def get_space_habits(self, obj):
-        habits = obj.space_habits.all().select_subclasses() 
+        habits = obj.space_habits.all().select_subclasses()
         response_data = []
         for habit in habits:
             if habit.type == 'recurrent':
                 specific_serializer = RecurrentHabitSerializerToRead(habit, context=self.context)
             else:
                 specific_serializer = GoalSerializerToRead(habit, context=self.context)
-            response_data.append(specific_serializer.data) 
-        
+            response_data.append(specific_serializer.data)
+
         return response_data
 
 class SpaceRoleSerializer(serializers.ModelSerializer):

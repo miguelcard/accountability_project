@@ -220,32 +220,51 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
     """
     Returns {"count": <int>, "unit": "W"|"M"} for a RecurrentHabit.
 
-    Weekly (time_frame="W"):
-        A period is the Mon–Sun week.
-        A period is "complete" when the number of DONE checkmarks in that week >= habit.times.
-    Monthly (time_frame="M"):
-        A period is the calendar month.
-        A period is "complete" when the number of DONE checkmarks in that month >= habit.times.
+    Each past period is evaluated against the `times` and `time_frame` that were
+    in effect during that period (resolved from the prefetched `config_history`),
+    not the current live values. This ensures that changing `times` does not
+    retroactively inflate or deflate the streak.
 
     Algorithm:
         1. Start from the current period.
-        2. If the current period is complete, count it and move to the previous one.
-        3. If the current period is NOT yet complete, move to the previous one without counting.
+        2. If the current period is complete (checkmarks >= historical target), count it.
+        3. If the current period is NOT yet complete, skip it and check the previous one.
         4. Continue backwards until a period is not complete — streak ends.
     """
     today = timezone.now().date()
-    time_frame = habit.time_frame
-    required = habit.times
 
     # Use pre-fetched done_checkmarks when available (set via Prefetch to_attr in get_queryset)
     # to avoid an extra DB query per habit (N+1). Falls back to a live query when the
-    # serializer is called outside of a prefetch context (e.g. SpaceHabitsApiView).
+    # serializer is called outside of a prefetch context.
     if hasattr(habit, 'done_checkmarks'):
         done_dates = {cm.date for cm in habit.done_checkmarks}
     else:
         done_dates = set(
             habit.checkmarks.filter(status='DONE').values_list('date', flat=True)
         )
+
+    # Build a sorted list of config snapshots from the prefetched config_history relation.
+    # Each entry has effective_from, times, time_frame.
+    config_entries = sorted(
+        habit.config_history.all(),
+        key=lambda c: c.effective_from,
+    )
+
+    def get_config_for_period(period_start: datetime.date):
+        """
+        Return (times, time_frame) that was in effect on `period_start`.
+        Finds the latest config entry whose effective_from <= period_start.
+        Falls back to current live values if no matching entry exists.
+        """
+        result = None
+        for entry in config_entries:
+            if entry.effective_from <= period_start:
+                result = entry
+            else:
+                break
+        if result is not None:
+            return result.times, result.time_frame
+        return habit.times, habit.time_frame
 
     def week_bounds(d: datetime.date):
         """Return (monday, sunday) for the week containing d."""
@@ -256,7 +275,6 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
     def month_bounds(d: datetime.date):
         """Return (first_day, last_day) for the month containing d."""
         first = d.replace(day=1)
-        # last day: go to next month, subtract one day
         if d.month == 12:
             last = datetime.date(d.year + 1, 1, 1) - datetime.timedelta(days=1)
         else:
@@ -275,6 +293,9 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
     first_period = True
 
     while True:
+        # Resolve the historically-correct config for this period's start date.
+        required, time_frame = get_config_for_period(anchor)
+
         if time_frame == 'W':
             start, end = week_bounds(anchor)
         else:  # 'M'
@@ -291,7 +312,6 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
                 # Current period incomplete — check previous period
                 anchor = prev_period_start(start)
                 continue
-
         else:
             if is_complete:
                 streak += 1
@@ -300,13 +320,16 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
 
         anchor = prev_period_start(start)
 
-    return {"count": streak, "unit": time_frame}
+    # Use the current config's time_frame as the streak unit.
+    _, current_time_frame = get_config_for_period(today)
+    return {"count": streak, "unit": current_time_frame}
 
 
 class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
     tags = HabitTagSerializer(many=True, read_only=True)
     checkmarks = CheckMarkNestedSerializer(many=True, read_only=True)
     streak = serializers.SerializerMethodField()
+    config_history = serializers.SerializerMethodField()
 
     class Meta:
         model = RecurrentHabit
@@ -317,6 +340,23 @@ class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
 
     def get_streak(self, obj):
         return _compute_streak(obj)
+
+    def get_config_history(self, obj):
+        """
+        Returns a list of config snapshots sorted ascending by effective_from.
+        Each entry: { effective_from (ISO date string), times (int), time_frame (str) }
+        Consumed by the frontend to resolve the historically-correct `times` denominator
+        for progress bar calculations on past weeks/months.
+        """
+        entries = obj.config_history.all().order_by('effective_from')
+        return [
+            {
+                'effective_from': entry.effective_from.isoformat(),
+                'times': entry.times,
+                'time_frame': entry.time_frame,
+            }
+            for entry in entries
+        ]
     
 class GoalSerializerToWrite(serializers.ModelSerializer):
     class Meta:

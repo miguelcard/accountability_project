@@ -187,6 +187,25 @@ REST_FRAMEWORK = {
 }
 
 # ──────────────────────────────────────────────────────────────
+# drf-spectacular (Swagger UI)
+# ──────────────────────────────────────────────────────────────
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Accountability API',
+    'VERSION': '1.0.0',
+    'SECURITY': [{'BearerAuth': []}],
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'Firebase JWT',
+                'description': 'Paste a Firebase ID token (obtain via getIdToken() in the browser console on the frontend app).',
+            }
+        }
+    },
+}
+
+# ──────────────────────────────────────────────────────────────
 # Firebase App Check
 # ──────────────────────────────────────────────────────────────
 # "monitoring" = log but allow requests without valid tokens (safe for rollout)

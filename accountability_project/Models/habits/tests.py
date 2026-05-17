@@ -19,7 +19,7 @@ from Models.habits.xp_utils import (
     settle_habit_xp_before_config_change,
     reconcile_user_xp,
 )
-from Models.habits.api.serializers import RecurrentHabitSerializerToPatch
+from Models.habits.api.serializers import RecurrentHabitSerializerToPatch, _compute_streak
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1045,3 +1045,135 @@ class NewConfigAppliesToFuturePeriodsOnlyTests(TestCase):
         try_award_xp_for_period(habit, w2)
 
         self.assertEqual(UserXPLedger.objects.filter(user=self.user).count(), 1)
+
+
+# ─── Historical streak tests ─────────────────────────────────────────────────
+
+class ComputeStreakHistoricalConfigTests(TestCase):
+    """
+    Tests that _compute_streak correctly evaluates each past period against
+    the `times` value that was in effect during that period, not the current
+    live value. Uses RecurrentHabitConfigHistory to record target changes.
+    """
+
+    def setUp(self):
+        self.user = make_user('streak_hist_user')
+
+    def _monday(self, weeks_ago: int) -> datetime.date:
+        """Return the Monday of the week `weeks_ago` weeks before today."""
+        today = datetime.date.today()
+        this_monday = today - datetime.timedelta(days=today.weekday())
+        return this_monday - datetime.timedelta(weeks=weeks_ago)
+
+    def test_increasing_times_does_not_inflate_past_streak(self):
+        """
+        Habit had times=3 for the past 2 weeks. User completed it 1x each week
+        (not meeting the goal of 3). User then changes times to 1.
+        _compute_streak should return 0 because those weeks did not meet
+        the goal of 3 that was in effect at the time.
+        """
+        habit = make_weekly_habit(self.user, times=1)  # creates with times=1, then we set history
+
+        w2 = self._monday(weeks_ago=2)
+        w1 = self._monday(weeks_ago=1)
+
+        # Simulate that the habit had times=3 for those two past weeks
+        RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
+            effective_from=w2, times=3, time_frame='W'
+        )
+
+        # User completed it only 1x each of the past two weeks
+        CheckMark.objects.create(habit=habit, date=w2, status='DONE')
+        CheckMark.objects.create(habit=habit, date=w1, status='DONE')
+
+        # Now simulate times changed to 1 this week
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=self._monday(weeks_ago=0),
+            defaults=dict(times=1, time_frame='W'),
+        )
+        habit.times = 1
+        habit.save()
+
+        result = _compute_streak(habit)
+        self.assertEqual(
+            result['count'], 0,
+            msg="Changing times from 3 to 1 should NOT retroactively make "
+                "past weeks with only 1 checkmark count as complete (they needed 3)."
+        )
+
+    def test_decreasing_times_does_not_invalidate_past_streak(self):
+        """
+        Habit had times=1 for 3 consecutive past weeks. User completed it
+        1x each week (meeting the goal of 1). User then changes times to 3.
+        _compute_streak should still return 3 because those weeks DID meet
+        the goal of 1 that was in effect at the time.
+        """
+        habit = make_weekly_habit(self.user, times=3)  # now times=3, but history reflects old config
+
+        w3 = self._monday(weeks_ago=3)
+        w2 = self._monday(weeks_ago=2)
+        w1 = self._monday(weeks_ago=1)
+
+        # Simulate habit had times=1 for those three weeks
+        RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
+            effective_from=w3, times=1, time_frame='W'
+        )
+
+        # User completed it 1x each week (met the goal of 1)
+        CheckMark.objects.create(habit=habit, date=w3, status='DONE')
+        CheckMark.objects.create(habit=habit, date=w2, status='DONE')
+        CheckMark.objects.create(habit=habit, date=w1, status='DONE')
+
+        # Now simulate times changed to 3 this week
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=self._monday(weeks_ago=0),
+            defaults=dict(times=3, time_frame='W'),
+        )
+
+        result = _compute_streak(habit)
+        self.assertEqual(
+            result['count'], 3,
+            msg="Changing times from 1 to 3 should NOT invalidate past weeks "
+                "where 1 checkmark met the goal of 1 that was in effect then."
+        )
+
+    def test_config_history_field_in_serializer_output(self):
+        """
+        RecurrentHabitSerializerToRead includes a `config_history` field
+        listing all config snapshots sorted ascending by effective_from,
+        each with effective_from (ISO string), times (int), time_frame (str).
+        """
+        habit = make_weekly_habit(self.user, times=1)
+
+        w3 = self._monday(weeks_ago=3)
+        # Simulate a second config change
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=w3 + datetime.timedelta(weeks=2),
+            defaults=dict(times=3, time_frame='W'),
+        )
+
+        from rest_framework.test import APIRequestFactory
+        factory = APIRequestFactory()
+        request = factory.get('/')
+        request.user = self.user
+
+        from Models.habits.api.serializers import RecurrentHabitSerializerToRead
+        data = RecurrentHabitSerializerToRead(habit, context={'request': request}).data
+
+        self.assertIn('config_history', data, "config_history field must be present in serializer output")
+        history = data['config_history']
+        self.assertIsInstance(history, list, "config_history must be a list")
+        self.assertGreaterEqual(len(history), 1, "config_history must have at least one entry")
+
+        for entry in history:
+            self.assertIn('effective_from', entry)
+            self.assertIn('times', entry)
+            self.assertIn('time_frame', entry)
+            self.assertIsInstance(entry['times'], int)
+
+        # Verify ascending sort by effective_from
+        dates = [entry['effective_from'] for entry in history]
+        self.assertEqual(dates, sorted(dates), "config_history must be sorted ascending by effective_from")
