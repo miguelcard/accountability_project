@@ -156,7 +156,7 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
            the config changed.
         All of this runs inside a single atomic transaction.
         """
-        from Models.habits.xp_utils import settle_habit_xp_before_config_change
+        from Models.habits.xp_utils import settle_habit_xp_before_config_change, period_start_for
 
         spaces = validated_data.pop('spaces', None)
 
@@ -165,7 +165,8 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
         new_times      = validated_data.get('times', old_times)
         new_time_frame = validated_data.get('time_frame', old_time_frame)
 
-        config_changed = (new_times != old_times) or (new_time_frame != old_time_frame)
+        config_changed    = (new_times != old_times) or (new_time_frame != old_time_frame)
+        time_frame_changed = new_time_frame != old_time_frame
 
         try:
             with transaction.atomic():
@@ -179,12 +180,23 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
                 instance.save()
 
                 if config_changed:
-                    # update_or_create: if the user changes config twice in one
-                    # day, the second change correctly overwrites the first
-                    # row rather than silently keeping the stale first value.
+                    # When only `times` changes (not `time_frame`), backdate
+                    # effective_from to the start of the current period so the
+                    # new requirement applies immediately this week/month.
+                    # When `time_frame` itself changes, keep effective_from=today
+                    # so the new frame only kicks in at the next clean period
+                    # boundary (avoids ambiguous partial-period evaluation).
+                    # update_or_create: if the user changes config twice in the
+                    # same period, the second change overwrites the first row.
+                    today = datetime.date.today()
+                    effective_from = (
+                        period_start_for(today, new_time_frame)
+                        if not time_frame_changed
+                        else today
+                    )
                     RecurrentHabitConfigHistory.objects.update_or_create(
                         habit          = instance,
-                        effective_from = datetime.date.today(),
+                        effective_from = effective_from,
                         defaults       = dict(times=new_times, time_frame=new_time_frame),
                     )
 

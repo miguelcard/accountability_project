@@ -500,9 +500,11 @@ class SettleXPBeforeConfigChangeTests(TestCase):
 
 class SameDayDoubleConfigChangeTests(TestCase):
     """
-    If times is changed twice on the same day the second change must win.
+    If times is changed twice within the same period the second change must win.
     Previously get_or_create was used which silently kept the first value.
     update_or_create must overwrite it.
+    For times-only changes the key is period_start_for(today, tf), not today,
+    so multiple changes within the same week all overwrite the same history row.
     """
 
     def setUp(self):
@@ -528,7 +530,7 @@ class SameDayDoubleConfigChangeTests(TestCase):
         habit.refresh_from_db()
         self.assertEqual(habit.times, 1)
 
-        # Simulate second same-day config change (1 → 5)
+        # Simulate second same-week config change (1 → 5)
         serializer2 = RecurrentHabitSerializerToPatch(
             habit,
             data={'times': 5},
@@ -538,16 +540,19 @@ class SameDayDoubleConfigChangeTests(TestCase):
         serializer2.save()
         habit.refresh_from_db()
 
-        # The today config history row must reflect the latest value (5)
-        today_row = RecurrentHabitConfigHistory.objects.get(
-            habit=habit, effective_from=datetime.date.today()
+        # The config history row for this period must reflect the latest value (5).
+        # For a times-only change, effective_from is backdated to the period start
+        # (Monday of the current week), so both PATCHes share the same row key.
+        period_start = period_start_for(datetime.date.today(), 'W')
+        current_row = RecurrentHabitConfigHistory.objects.get(
+            habit=habit, effective_from=period_start
         )
-        self.assertEqual(today_row.times, 5)
+        self.assertEqual(current_row.times, 5)
         # And the live habit reflects it too
         self.assertEqual(habit.times, 5)
 
     def test_same_day_change_does_not_create_duplicate_config_rows(self):
-        """Only one config row per day must exist, regardless of how many changes."""
+        """Only one config row per period must exist, regardless of how many changes."""
         habit = make_weekly_habit(self.user, times=3)
 
         for new_times in [1, 2, 4]:
@@ -560,11 +565,14 @@ class SameDayDoubleConfigChangeTests(TestCase):
             serializer.save()
             habit.refresh_from_db()
 
-        today_rows = RecurrentHabitConfigHistory.objects.filter(
-            habit=habit, effective_from=datetime.date.today()
+        # All times-only changes within the same week share effective_from=period_start
+        # (Monday), so there must be exactly one row for this period.
+        period_start = period_start_for(datetime.date.today(), 'W')
+        period_rows = RecurrentHabitConfigHistory.objects.filter(
+            habit=habit, effective_from=period_start
         )
-        self.assertEqual(today_rows.count(), 1)
-        self.assertEqual(today_rows.first().times, 4)
+        self.assertEqual(period_rows.count(), 1)
+        self.assertEqual(period_rows.first().times, 4)
 
 
 # ─── Fix #2: settle uses most-recent config row (cycling configs) ─────────────
@@ -788,9 +796,16 @@ class SerializerXPIsolationIntegrationTests(TestCase):
         reconcile_user_xp(self.user)
         self.assertEqual(UserXPLedger.objects.filter(user=self.user).count(), 1)
 
-    def test_patch_config_creates_correct_config_history_row(self):
-        """After a PATCH the new config must be recorded in history."""
+    def test_patch_times_only_effective_from_is_period_start(self):
+        """
+        Changing only `times` via the serializer must write effective_from at
+        the start of the current period (this Monday for a weekly habit), NOT
+        today.  This makes the new requirement apply immediately to the current
+        week rather than only taking effect next week.
+        """
         habit = make_weekly_habit(self.user, times=3)
+        today = datetime.date.today()
+        expected_effective_from = period_start_for(today, 'W')  # Monday of current week
 
         serializer = RecurrentHabitSerializerToPatch(
             habit, data={'times': 2}, partial=True
@@ -798,11 +813,106 @@ class SerializerXPIsolationIntegrationTests(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
         serializer.save()
 
-        today_row = RecurrentHabitConfigHistory.objects.get(
-            habit=habit, effective_from=datetime.date.today()
+        row = RecurrentHabitConfigHistory.objects.get(
+            habit=habit, effective_from=expected_effective_from
         )
-        self.assertEqual(today_row.times, 2)
-        self.assertEqual(today_row.time_frame, 'W')
+        self.assertEqual(row.times, 2)
+        self.assertEqual(row.time_frame, 'W')
+
+    def test_patch_times_only_config_for_current_period_returns_new_config(self):
+        """
+        After a times-only PATCH, _config_for_period for the current week's
+        Monday must return the new times value — confirming the current week
+        evaluates under the updated requirement.
+        """
+        habit = make_weekly_habit(self.user, times=3)
+        today = datetime.date.today()
+        this_monday = period_start_for(today, 'W')
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'times': 2}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        times, tf = _config_for_period(habit, this_monday)
+        self.assertEqual(times, 2)
+        self.assertEqual(tf, 'W')
+
+    def test_patch_time_frame_change_effective_from_is_today(self):
+        """
+        When `time_frame` itself changes, effective_from must remain today
+        (not backdated to period start) to avoid ambiguous partial-period
+        evaluation.  The new frame only kicks in at the next clean boundary.
+        """
+        habit = make_weekly_habit(self.user, times=3)
+        today = datetime.date.today()
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'time_frame': 'M', 'times': 1}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        row = RecurrentHabitConfigHistory.objects.get(
+            habit=habit, effective_from=today
+        )
+        self.assertEqual(row.time_frame, 'M')
+
+    def test_patch_times_only_monthly_habit_effective_from_is_month_start(self):
+        """
+        For a monthly habit, a times-only PATCH must backdate effective_from to
+        the 1st of the current month — not today — so the new requirement
+        applies to the current month immediately.
+        """
+        BACKDATE = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
+        habit = RecurrentHabit.objects.create(
+            owner=self.user, title='Monthly Habit', times=3, time_frame='M'
+        )
+        RecurrentHabit.objects.filter(pk=habit.pk).update(created_at=BACKDATE)
+        RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
+            effective_from=BACKDATE.date()
+        )
+        habit.refresh_from_db()
+
+        today = datetime.date.today()
+        expected_effective_from = period_start_for(today, 'M')  # 1st of current month
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'times': 2}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        row = RecurrentHabitConfigHistory.objects.get(
+            habit=habit, effective_from=expected_effective_from
+        )
+        self.assertEqual(row.times, 2)
+        self.assertEqual(row.time_frame, 'M')
+
+        # And _config_for_period for the current month's start must return new times
+        times, tf = _config_for_period(habit, expected_effective_from)
+        self.assertEqual(times, 2)
+        self.assertEqual(tf, 'M')
+
+    def test_patch_times_only_past_weeks_retain_old_config(self):
+        """
+        After a times-only PATCH, past periods must still be evaluated under
+        the OLD config — the backdate only affects the CURRENT period's
+        effective_from, not any rows covering past periods.
+        """
+        habit = make_weekly_habit(self.user, times=3)
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'times': 1}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        # PAST_MONDAY is well before the current week — must still return old times=3
+        times, tf = _config_for_period(habit, PAST_MONDAY)
+        self.assertEqual(times, 3)
+        self.assertEqual(tf, 'W')
 
     def test_patch_no_config_change_does_not_create_new_history_row(self):
         """A PATCH that only changes title must not add a config history row."""
