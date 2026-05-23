@@ -180,25 +180,61 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
                 instance.save()
 
                 if config_changed:
-                    # When only `times` changes (not `time_frame`), backdate
-                    # effective_from to the start of the current period so the
-                    # new requirement applies immediately this week/month.
                     # When `time_frame` itself changes, keep effective_from=today
                     # so the new frame only kicks in at the next clean period
                     # boundary (avoids ambiguous partial-period evaluation).
-                    # update_or_create: if the user changes config twice in the
-                    # same period, the second change overwrites the first row.
+                    #
+                    # When only `times` changes (not `time_frame`), we want the
+                    # new requirement to apply to the whole current period.
+                    # We backdate to period_start UNLESS there is already a
+                    # config-history entry within the current period (e.g. from a
+                    # time_frame change earlier today).  In that case we reuse
+                    # that entry's effective_from so we don't create a second row
+                    # at period_start that would be silently overridden by the
+                    # newer entry when config is resolved going forward.
+                    #
+                    # After the upsert we also prune any other entries in the
+                    # current period that predate the one we just wrote — these
+                    # are artefacts of the old backdating logic and would
+                    # incorrectly override the correct entry for past dates.
                     today = datetime.date.today()
-                    effective_from = (
-                        period_start_for(today, new_time_frame)
-                        if not time_frame_changed
-                        else today
-                    )
+                    if not time_frame_changed:
+                        period_start = period_start_for(today, new_time_frame)
+                        # Find the most recent entry already within the current period.
+                        recent_in_period = (
+                            RecurrentHabitConfigHistory.objects
+                            .filter(
+                                habit=instance,
+                                effective_from__gte=period_start,
+                                effective_from__lte=today,
+                            )
+                            .order_by('-effective_from')
+                            .first()
+                        )
+                        effective_from = (
+                            recent_in_period.effective_from
+                            if recent_in_period
+                            else period_start
+                        )
+                    else:
+                        effective_from = today
+                        period_start = effective_from  # nothing to prune for time_frame changes
+
                     RecurrentHabitConfigHistory.objects.update_or_create(
                         habit          = instance,
                         effective_from = effective_from,
                         defaults       = dict(times=new_times, time_frame=new_time_frame),
                     )
+
+                    # Prune superseded within-period entries that predate the row
+                    # we just wrote (e.g. a leftover May-1 entry after a W→M
+                    # change created a May-23 entry that we just updated above).
+                    if not time_frame_changed:
+                        RecurrentHabitConfigHistory.objects.filter(
+                            habit=instance,
+                            effective_from__gte=period_start,
+                            effective_from__lt=effective_from,
+                        ).delete()
 
                 if spaces is not None:
                     try:
@@ -303,6 +339,10 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
     streak = 0
     anchor = today
     first_period = True
+    # Tracks the time_frame of the most recently completed streak period so the
+    # unit reflects the historical config that was actually counted, not the
+    # current live config (which may have changed since those periods ran).
+    streak_unit: str | None = None
 
     while True:
         # Resolve the historically-correct config for this period's start date.
@@ -320,6 +360,7 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
             first_period = False
             if is_complete:
                 streak += 1
+                streak_unit = time_frame
             else:
                 # Current period incomplete — check previous period
                 anchor = prev_period_start(start)
@@ -327,14 +368,16 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
         else:
             if is_complete:
                 streak += 1
+                streak_unit = time_frame
             else:
                 break  # streak broken
 
         anchor = prev_period_start(start)
 
-    # Use the current config's time_frame as the streak unit.
-    _, current_time_frame = get_config_for_period(today)
-    return {"count": streak, "unit": current_time_frame}
+    # Fall back to the current config's time_frame when no period was completed.
+    if streak_unit is None:
+        _, streak_unit = get_config_for_period(today)
+    return {"count": streak, "unit": streak_unit}
 
 
 class RecurrentHabitSerializerToRead(serializers.ModelSerializer):
