@@ -63,6 +63,40 @@ class HabitTagSerializer(serializers.ModelSerializer):
         model = HabitTag
         fields = '__all__'
 
+def _next_time_frame_period_start(today: datetime.date, new_time_frame: str) -> datetime.date:
+    """
+    Return the first day of the NEXT full period under `new_time_frame`.
+
+    W→M: 1st of the following month.  If today is already the 1st, defer by
+         one additional month so we never return today itself.
+    M→W: The coming Monday.  If today is already a Monday, defer by one full
+         week for the same reason.
+
+    This ensures the old rule continues through the remainder of the current
+    period, eliminating the dead-zone gap.
+    """
+    if new_time_frame == 'M':
+        # Move to the 1st of next month (handle December → January rollover).
+        if today.month == 12:
+            first_next = datetime.date(today.year + 1, 1, 1)
+        else:
+            first_next = datetime.date(today.year, today.month + 1, 1)
+        # If today IS already the 1st, defer one more month.
+        if today.day == 1:
+            if first_next.month == 12:
+                first_next = datetime.date(first_next.year + 1, 1, 1)
+            else:
+                first_next = datetime.date(first_next.year, first_next.month + 1, 1)
+        return first_next
+    else:  # 'W'
+        # Next Monday: days_until_monday = (7 - today.weekday()) % 7
+        days_until_monday = (7 - today.weekday()) % 7
+        # If today IS Monday (days_until=0), defer a full week.
+        if days_until_monday == 0:
+            days_until_monday = 7
+        return today + datetime.timedelta(days=days_until_monday)
+
+
 class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
     spaces = serializers.PrimaryKeyRelatedField(
         many=True, 
@@ -180,27 +214,51 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
                 instance.save()
 
                 if config_changed:
-                    # When `time_frame` itself changes, keep effective_from=today
-                    # so the new frame only kicks in at the next clean period
-                    # boundary (avoids ambiguous partial-period evaluation).
-                    #
-                    # When only `times` changes (not `time_frame`), we want the
-                    # new requirement to apply to the whole current period.
-                    # We backdate to period_start UNLESS there is already a
-                    # config-history entry within the current period (e.g. from a
-                    # time_frame change earlier today).  In that case we reuse
-                    # that entry's effective_from so we don't create a second row
-                    # at period_start that would be silently overridden by the
-                    # newer entry when config is resolved going forward.
-                    #
-                    # After the upsert we also prune any other entries in the
-                    # current period that predate the one we just wrote — these
-                    # are artefacts of the old backdating logic and would
-                    # incorrectly override the correct entry for past dates.
                     today = datetime.date.today()
-                    if not time_frame_changed:
+
+                    # When `time_frame` changes, we normally defer effective_from
+                    # to the first day of the NEXT full period under the new frame
+                    # to avoid a dead-zone gap (old rule continues earning XP
+                    # through the remainder of the current period).
+                    #
+                    # EXCEPTION — "immediate revert": if the currently-active
+                    # config (the last history entry whose effective_from <= today)
+                    # already shares the same time_frame as the new value, the
+                    # user is cancelling a pending future transition that hasn't
+                    # kicked in yet (e.g. W→M was saved yesterday, new entry is
+                    # sitting at June 1, but today is still W — changing back to
+                    # W,2x should apply immediately to the current week, not defer
+                    # another week).  In that case treat it like a times-only
+                    # change and apply immediately to the current period.
+                    if time_frame_changed:
+                        # Walk history (ascending effective_from) to find what's
+                        # genuinely running today.
+                        history_entries = sorted(
+                            instance.config_history.all(),
+                            key=lambda e: e.effective_from,
+                        )
+                        active_time_frame = old_time_frame  # fallback
+                        for entry in history_entries:
+                            if entry.effective_from <= today:
+                                active_time_frame = entry.time_frame
+                            else:
+                                break
+                        # Revert = the currently-active frame already equals the
+                        # new target frame (pending future entry will be overwritten).
+                        is_revert = (active_time_frame == new_time_frame)
+                    else:
+                        is_revert = False
+
+                    # apply_deferred: True  → create future transition entry
+                    #                 False → apply to current period immediately
+                    apply_deferred = time_frame_changed and not is_revert
+
+                    if not apply_deferred:
+                        # Immediate path (times-only change OR revert of a pending
+                        # future transition).
                         period_start = period_start_for(today, new_time_frame)
-                        # Find the most recent entry already within the current period.
+                        # Reuse the most recent within-period entry's date so we
+                        # don't create a second row that might be overridden.
                         recent_in_period = (
                             RecurrentHabitConfigHistory.objects
                             .filter(
@@ -217,8 +275,15 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
                             else period_start
                         )
                     else:
-                        effective_from = today
-                        period_start = effective_from  # nothing to prune for time_frame changes
+                        # Deferred path — applies from the next clean period.
+                        effective_from = _next_time_frame_period_start(today, new_time_frame)
+                        period_start = effective_from  # only used for pruning below
+                        # Stash transition data for to_representation() to expose.
+                        instance._config_transition = {
+                            'old_time_frame': old_time_frame,
+                            'new_time_frame': new_time_frame,
+                            'new_effective_from': effective_from.isoformat(),
+                        }
 
                     RecurrentHabitConfigHistory.objects.update_or_create(
                         habit          = instance,
@@ -229,11 +294,20 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
                     # Prune superseded within-period entries that predate the row
                     # we just wrote (e.g. a leftover May-1 entry after a W→M
                     # change created a May-23 entry that we just updated above).
-                    if not time_frame_changed:
+                    if not apply_deferred:
                         RecurrentHabitConfigHistory.objects.filter(
                             habit=instance,
                             effective_from__gte=period_start,
                             effective_from__lt=effective_from,
+                        ).delete()
+
+                    # For a revert, also delete any pending future entries that
+                    # were part of the transition we just cancelled (e.g. the
+                    # W→M June 1 entry when the user reverts M→W today).
+                    if is_revert:
+                        RecurrentHabitConfigHistory.objects.filter(
+                            habit=instance,
+                            effective_from__gt=today,
                         ).delete()
 
                 if spaces is not None:
@@ -254,7 +328,13 @@ class RecurrentHabitSerializerToWrite(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         serializer = RecurrentHabitSerializerToRead(instance, context=self.context)
-        return serializer.data
+        data = serializer.data
+        # Inject config_transition when a time_frame change was just made.
+        # The update() method stashes it as a transient attribute on the instance.
+        config_transition = getattr(instance, '_config_transition', None)
+        if config_transition is not None:
+            data['config_transition'] = config_transition
+        return data
     
 # Overwrites the Serializer to write to make the fields not required for the PATCH methods
 class RecurrentHabitSerializerToPatch(RecurrentHabitSerializerToWrite):

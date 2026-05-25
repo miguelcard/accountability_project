@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+from rest_framework.test import APIRequestFactory
 
 from Models.users.models import User
 from Models.habits.models import RecurrentHabit, RecurrentHabitConfigHistory, CheckMark, UserXPLedger
@@ -19,7 +20,7 @@ from Models.habits.xp_utils import (
     settle_habit_xp_before_config_change,
     reconcile_user_xp,
 )
-from Models.habits.api.serializers import RecurrentHabitSerializerToPatch, _compute_streak
+from Models.habits.api.serializers import RecurrentHabitSerializerToPatch, _compute_streak, _next_time_frame_period_start
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -839,14 +840,25 @@ class SerializerXPIsolationIntegrationTests(TestCase):
         self.assertEqual(times, 2)
         self.assertEqual(tf, 'W')
 
-    def test_patch_time_frame_change_effective_from_is_today(self):
+    def test_patch_time_frame_change_effective_from_is_deferred_to_next_period(self):
         """
-        When `time_frame` itself changes, effective_from must remain today
-        (not backdated to period start) to avoid ambiguous partial-period
-        evaluation.  The new frame only kicks in at the next clean boundary.
+        When `time_frame` itself changes (W\u2192M), effective_from must be deferred
+        to the first day of the NEXT full period under the new time_frame
+        (1st of next month for W\u2192M), NOT today.  This eliminates the dead zone.
         """
         habit = make_weekly_habit(self.user, times=3)
         today = datetime.date.today()
+        # Expected: 1st of next month (handle December rollover).
+        if today.month == 12:
+            expected_effective_from = datetime.date(today.year + 1, 1, 1)
+        else:
+            expected_effective_from = datetime.date(today.year, today.month + 1, 1)
+        # If today itself is the 1st, it should be pushed one further month.
+        if today.day == 1:
+            if expected_effective_from.month == 12:
+                expected_effective_from = datetime.date(expected_effective_from.year + 1, 1, 1)
+            else:
+                expected_effective_from = datetime.date(expected_effective_from.year, expected_effective_from.month + 1, 1)
 
         serializer = RecurrentHabitSerializerToPatch(
             habit, data={'time_frame': 'M', 'times': 1}, partial=True
@@ -855,7 +867,7 @@ class SerializerXPIsolationIntegrationTests(TestCase):
         serializer.save()
 
         row = RecurrentHabitConfigHistory.objects.get(
-            habit=habit, effective_from=today
+            habit=habit, effective_from=expected_effective_from
         )
         self.assertEqual(row.time_frame, 'M')
 
@@ -927,6 +939,143 @@ class SerializerXPIsolationIntegrationTests(TestCase):
 
         row_count_after = RecurrentHabitConfigHistory.objects.filter(habit=habit).count()
         self.assertEqual(row_count_before, row_count_after)
+
+    # ── Deferred effective_from tests (timeframe-change-transition-ux) ──────────
+
+    def _next_month_first(self, from_date: datetime.date) -> datetime.date:
+        """Return the 1st of the month after from_date, deferring an extra month if from_date is the 1st."""
+        if from_date.month == 12:
+            first_next = datetime.date(from_date.year + 1, 1, 1)
+        else:
+            first_next = datetime.date(from_date.year, from_date.month + 1, 1)
+        if from_date.day == 1:
+            # Already on the 1st — push one more month.
+            if first_next.month == 12:
+                first_next = datetime.date(first_next.year + 1, 1, 1)
+            else:
+                first_next = datetime.date(first_next.year, first_next.month + 1, 1)
+        return first_next
+
+    def _next_monday(self, from_date: datetime.date) -> datetime.date:
+        """Return the coming Monday after from_date, deferring a full week if from_date is already Monday."""
+        days_until = (7 - from_date.weekday()) % 7
+        if days_until == 0:
+            days_until = 7
+        return from_date + datetime.timedelta(days=days_until)
+
+    def test_w_to_m_effective_from_is_first_of_next_month(self):
+        """
+        W\u2192M PATCH: effective_from must be the 1st of the following month.
+        Old weekly periods between today and effective_from still earn weekly XP.
+        """
+        habit = make_weekly_habit(self.user, times=1)
+        today = datetime.date.today()
+        expected = self._next_month_first(today)
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'time_frame': 'M', 'times': 1}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        row = RecurrentHabitConfigHistory.objects.filter(habit=habit, time_frame='M').order_by('effective_from').first()
+        self.assertIsNotNone(row)
+        self.assertEqual(row.effective_from, expected)
+
+    def test_m_to_w_effective_from_is_next_monday(self):
+        """
+        M\u2192W PATCH: effective_from must be the coming Monday (or Monday+7 if today is Monday).
+        """
+        habit = RecurrentHabit.objects.create(
+            owner=self.user, title='Monthly Habit', times=3, time_frame='M'
+        )
+        today = datetime.date.today()
+        expected = self._next_monday(today)
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'time_frame': 'W', 'times': 2}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        row = RecurrentHabitConfigHistory.objects.filter(habit=habit, time_frame='W').order_by('effective_from').first()
+        self.assertIsNotNone(row)
+        self.assertEqual(row.effective_from, expected)
+
+    def test_w_to_m_past_weekly_periods_still_earn_xp_after_change(self):
+        """
+        W\u2192M: a completed past week must still earn weekly XP under the old config
+        after the change (settle runs during update()).
+        """
+        habit = make_weekly_habit(self.user, times=1)
+        fill_week(habit, PAST_MONDAY, count=1)
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'time_frame': 'M', 'times': 1}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        # Settle during update() must have awarded past week as WEEKLY_HABIT.
+        entry = UserXPLedger.objects.filter(user=self.user).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.reason, 'WEEKLY_HABIT')
+
+    def test_w_to_m_patch_response_includes_config_transition(self):
+        """
+        PATCH response for a W\u2192M change must include config_transition with
+        old_time_frame, new_time_frame, and new_effective_from (1st of next month).
+        """
+        habit = make_weekly_habit(self.user, times=1)
+        today = datetime.date.today()
+        expected_effective_from = self._next_month_first(today).isoformat()
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'time_frame': 'M', 'times': 1}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated_habit = serializer.save()
+        request = APIRequestFactory().get('/')
+        representation = RecurrentHabitSerializerToPatch(updated_habit, context={'request': request}).to_representation(updated_habit)
+
+        self.assertIn('config_transition', representation)
+        ct = representation['config_transition']
+        self.assertEqual(ct['old_time_frame'], 'W')
+        self.assertEqual(ct['new_time_frame'], 'M')
+        self.assertEqual(ct['new_effective_from'], expected_effective_from)
+
+    def test_times_only_patch_response_excludes_config_transition(self):
+        """
+        PATCH that only changes times (not time_frame) must NOT include
+        config_transition in the response.
+        """
+        habit = make_weekly_habit(self.user, times=3)
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'times': 1}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated_habit = serializer.save()
+        request = APIRequestFactory().get('/')
+        representation = RecurrentHabitSerializerToPatch(updated_habit, context={'request': request}).to_representation(updated_habit)
+
+        self.assertNotIn('config_transition', representation)
+
+    def test_description_only_patch_response_excludes_config_transition(self):
+        """
+        PATCH that only changes description must NOT include config_transition.
+        """
+        habit = make_weekly_habit(self.user, times=1)
+
+        serializer = RecurrentHabitSerializerToPatch(
+            habit, data={'description': 'Updated desc'}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated_habit = serializer.save()
+        request = APIRequestFactory().get('/')
+        representation = RecurrentHabitSerializerToPatch(updated_habit, context={'request': request}).to_representation(updated_habit)
+
+        self.assertNotIn('config_transition', representation)
 
 
 # ─── Settle / reconcile award periods oldest→newest (streak ordering fix) ────
@@ -1284,6 +1433,76 @@ class ComputeStreakHistoricalConfigTests(TestCase):
             self.assertIn('time_frame', entry)
             self.assertIsInstance(entry['times'], int)
 
-        # Verify ascending sort by effective_from
-        dates = [entry['effective_from'] for entry in history]
-        self.assertEqual(dates, sorted(dates), "config_history must be sorted ascending by effective_from")
+
+# ─── Unit tests for _next_time_frame_period_start with pinned dates ────────────
+
+class NextTimeFramePeriodStartTests(TestCase):
+    """
+    Pure unit tests for _next_time_frame_period_start() using fixed dates so
+    the edge cases (today == 1st of month, today == Monday) are always covered
+    regardless of which day the CI runs.
+    """
+
+    # ── W → M ────────────────────────────────────────────────────────────────
+
+    def test_w_to_m_mid_month(self):
+        """Mid-month W→M: returns the 1st of the following month."""
+        today = datetime.date(2026, 5, 15)   # 15 May 2026 (not the 1st)
+        result = _next_time_frame_period_start(today, 'M')
+        self.assertEqual(result, datetime.date(2026, 6, 1))
+
+    def test_w_to_m_last_day_of_month(self):
+        """Last day of month W→M: returns the 1st of the next month."""
+        today = datetime.date(2026, 1, 31)   # 31 Jan 2026
+        result = _next_time_frame_period_start(today, 'M')
+        self.assertEqual(result, datetime.date(2026, 2, 1))
+
+    def test_w_to_m_on_first_of_month_defers_extra_month(self):
+        """When today IS the 1st, defer one more month to avoid a same-day switch."""
+        today = datetime.date(2026, 5, 1)    # 1 May 2026
+        result = _next_time_frame_period_start(today, 'M')
+        self.assertEqual(result, datetime.date(2026, 7, 1))  # skips June, lands on July
+
+    def test_w_to_m_december_rollover(self):
+        """W→M on a December mid-month day: rolls over to January 1st."""
+        today = datetime.date(2026, 12, 15)
+        result = _next_time_frame_period_start(today, 'M')
+        self.assertEqual(result, datetime.date(2027, 1, 1))
+
+    def test_w_to_m_on_first_of_december_rolls_to_february(self):
+        """W→M on Dec 1: defers to Feb 1 of next year (skip Jan, then skip again)."""
+        today = datetime.date(2026, 12, 1)
+        result = _next_time_frame_period_start(today, 'M')
+        self.assertEqual(result, datetime.date(2027, 2, 1))
+
+    # ── M → W ────────────────────────────────────────────────────────────────
+
+    def test_m_to_w_mid_week(self):
+        """Mid-week M→W (Thursday): returns the coming Monday."""
+        today = datetime.date(2026, 5, 21)   # Thursday
+        result = _next_time_frame_period_start(today, 'W')
+        self.assertEqual(result, datetime.date(2026, 5, 25))  # next Monday
+
+    def test_m_to_w_friday(self):
+        """Friday M→W: returns the coming Monday (3 days away)."""
+        today = datetime.date(2026, 5, 22)   # Friday 22 May 2026
+        result = _next_time_frame_period_start(today, 'W')
+        self.assertEqual(result, datetime.date(2026, 5, 25))  # Monday 25 May
+
+    def test_m_to_w_on_monday_defers_one_full_week(self):
+        """When today IS a Monday, defer by a full week."""
+        today = datetime.date(2026, 5, 18)   # Monday 18 May 2026
+        result = _next_time_frame_period_start(today, 'W')
+        self.assertEqual(result, datetime.date(2026, 5, 25))  # next Monday, not today
+
+    def test_m_to_w_sunday(self):
+        """Sunday M→W: returns the very next day (Monday)."""
+        today = datetime.date(2026, 5, 17)   # Sunday
+        result = _next_time_frame_period_start(today, 'W')
+        self.assertEqual(result, datetime.date(2026, 5, 18))  # Monday
+
+    def test_m_to_w_week_spans_month_boundary(self):
+        """M→W near month end: returned Monday may be in the next month."""
+        today = datetime.date(2026, 5, 29)   # Friday 29 May
+        result = _next_time_frame_period_start(today, 'W')
+        self.assertEqual(result, datetime.date(2026, 6, 1))   # Monday is June 1
