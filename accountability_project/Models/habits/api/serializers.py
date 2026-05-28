@@ -428,6 +428,14 @@ def _compute_streak(habit: RecurrentHabit) -> dict:
         # Resolve the historically-correct config for this period's start date.
         required, time_frame = get_config_for_period(anchor)
 
+        # Stop counting if we cross into a different time_frame phase.
+        # e.g. habit changed W→M: once streak_unit='M' is established, do not
+        # continue counting old 'W' periods behind the change date (and vice
+        # versa). streak_unit is None until the first period is counted, so the
+        # skip-incomplete-first-period path is unaffected.
+        if streak_unit is not None and time_frame != streak_unit:
+            break
+
         if time_frame == 'W':
             start, end = week_bounds(anchor)
         else:  # 'M'

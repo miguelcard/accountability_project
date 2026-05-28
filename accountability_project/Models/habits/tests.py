@@ -1398,6 +1398,195 @@ class ComputeStreakHistoricalConfigTests(TestCase):
                 "where 1 checkmark met the goal of 1 that was in effect then."
         )
 
+    def test_w_to_m_change_resets_display_streak(self):
+        """
+        Habit had 3 completed weekly periods, then time_frame changed to monthly.
+        _compute_streak should NOT count the old weekly periods after crossing
+        the W→M boundary; only complete monthly periods since the change count.
+        """
+        today = datetime.date.today()
+        this_monday = today - datetime.timedelta(days=today.weekday())
+        first_of_month = today.replace(day=1)
+        change_date = first_of_month  # M config started at the 1st of this month
+
+        habit = make_weekly_habit(self.user, times=1)
+
+        # Simulate W config covering the 3 weeks before this month
+        w3 = this_monday - datetime.timedelta(weeks=3)
+        RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
+            effective_from=datetime.date.min, times=1, time_frame='W'
+        )
+        # Add the M config row effective from the 1st of this month
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=change_date,
+            defaults=dict(times=1, time_frame='M'),
+        )
+        habit.time_frame = 'M'
+        habit.save()
+
+        # Mark 3 completed weeks *before* the month started
+        w1 = this_monday - datetime.timedelta(weeks=1)
+        w2 = this_monday - datetime.timedelta(weeks=2)
+        for monday in (w3, w2, w1):
+            # Only add a checkmark if the date falls before this month
+            if monday < first_of_month:
+                CheckMark.objects.create(habit=habit, date=monday, status='DONE')
+
+        # Current month is incomplete (no checkmarks this month)
+        result = _compute_streak(habit)
+        self.assertEqual(
+            result['count'], 0,
+            msg="W→M change: old weekly periods must not bleed into the monthly streak."
+        )
+        self.assertEqual(result['unit'], 'M')
+
+    def test_m_to_w_change_stops_at_monthly_boundary(self):
+        """
+        Habit had 3 completed monthly periods, then time_frame changed to weekly.
+        _compute_streak should count only consecutive W periods since the change
+        and stop when it hits the first M period behind the boundary.
+        """
+        today = datetime.date.today()
+        this_monday = today - datetime.timedelta(days=today.weekday())
+        change_date = this_monday - datetime.timedelta(weeks=2)  # changed 2 weeks ago
+
+        habit = make_weekly_habit(self.user, times=1)
+
+        # Original M config
+        RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
+            effective_from=datetime.date.min, times=1, time_frame='M'
+        )
+        # W config effective from change_date
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=change_date,
+            defaults=dict(times=1, time_frame='W'),
+        )
+        habit.time_frame = 'W'
+        habit.save()
+
+        # Complete the 2 weeks since the change
+        w2 = this_monday - datetime.timedelta(weeks=2)
+        w1 = this_monday - datetime.timedelta(weeks=1)
+        CheckMark.objects.create(habit=habit, date=w2, status='DONE')
+        CheckMark.objects.create(habit=habit, date=w1, status='DONE')
+
+        # Also complete the months before the change (should NOT be counted).
+        # Use calendar arithmetic to avoid the 28-day approximation: subtract
+        # month by month correctly so we always land on the 1st of the right month.
+        first_of_current_month = today.replace(day=1)
+        for months_ago in range(1, 4):
+            # Step back one month at a time from the current month's 1st.
+            m = first_of_current_month
+            for _ in range(months_ago):
+                m = (m - datetime.timedelta(days=1)).replace(day=1)
+            CheckMark.objects.create(habit=habit, date=m, status='DONE')
+
+        result = _compute_streak(habit)
+        self.assertEqual(
+            result['count'], 2,
+            msg="M→W change: streak must count only W periods since the change, stopping at the M boundary."
+        )
+        self.assertEqual(result['unit'], 'W')
+
+    def test_w_to_m_current_month_complete_shows_one_month_streak(self):
+        """
+        Habit changed W→M and the user has already completed the current month.
+        _compute_streak should return count=1, unit='M' — the single completed
+        monthly period — NOT the old weekly streak count.
+        """
+        today = datetime.date.today()
+        first_of_month = today.replace(day=1)
+
+        habit = make_weekly_habit(self.user, times=2)
+
+        # W config from the beginning, M config from the 1st of this month
+        RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
+            effective_from=datetime.date.min, times=2, time_frame='W'
+        )
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=first_of_month,
+            defaults=dict(times=2, time_frame='M'),
+        )
+        habit.time_frame = 'M'
+        habit.times = 2
+        habit.save()
+
+        # Complete 4 weeks before this month (the old weekly streak)
+        this_monday = today - datetime.timedelta(days=today.weekday())
+        for weeks_ago in range(1, 5):
+            monday = this_monday - datetime.timedelta(weeks=weeks_ago)
+            if monday < first_of_month:
+                CheckMark.objects.create(habit=habit, date=monday, status='DONE')
+                CheckMark.objects.create(habit=habit, date=monday + datetime.timedelta(days=1), status='DONE')
+
+        # Also complete the current month (2 checkmarks this month)
+        CheckMark.objects.create(habit=habit, date=first_of_month, status='DONE')
+        CheckMark.objects.create(habit=habit, date=first_of_month + datetime.timedelta(days=1), status='DONE')
+
+        result = _compute_streak(habit)
+        self.assertEqual(
+            result['count'], 1,
+            msg="W→M with current month complete: streak must be 1m (this month only), not the old weekly count."
+        )
+        self.assertEqual(result['unit'], 'M')
+
+    def test_w_to_m_to_w_across_separate_weeks(self):
+        """
+        Habit went W→M (3 weeks ago) then M→W (1 week ago).
+        The user has 1 completed W period since the final W restoration.
+        _compute_streak must count only that 1 week and stop at the M boundary —
+        it must not reach back through the M phase to the original W streak.
+        """
+        today = datetime.date.today()
+        this_monday = today - datetime.timedelta(days=today.weekday())
+
+        w_to_m_date = this_monday - datetime.timedelta(weeks=3)  # W→M 3 weeks ago
+        m_to_w_date = this_monday - datetime.timedelta(weeks=1)  # M→W 1 week ago
+
+        habit = make_weekly_habit(self.user, times=1)
+
+        # Original W config from the beginning
+        RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
+            effective_from=datetime.date.min, times=1, time_frame='W'
+        )
+        # M config row: W→M 3 weeks ago
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=w_to_m_date,
+            defaults=dict(times=1, time_frame='M'),
+        )
+        # W config row: M→W 1 week ago
+        RecurrentHabitConfigHistory.objects.update_or_create(
+            habit=habit,
+            effective_from=m_to_w_date,
+            defaults=dict(times=1, time_frame='W'),
+        )
+        habit.time_frame = 'W'
+        habit.save()
+
+        # Complete 3 original weekly periods (before W→M; should NOT be counted)
+        for weeks_ago in range(4, 7):
+            monday = this_monday - datetime.timedelta(weeks=weeks_ago)
+            CheckMark.objects.create(habit=habit, date=monday, status='DONE')
+
+        # Complete the M phase month (the week containing w_to_m_date to m_to_w_date;
+        # should NOT bleed into the final W phase streak)
+        CheckMark.objects.create(habit=habit, date=w_to_m_date, status='DONE')
+
+        # Complete exactly 1 W period since M→W
+        w_since_restore = this_monday - datetime.timedelta(weeks=1)
+        CheckMark.objects.create(habit=habit, date=w_since_restore, status='DONE')
+
+        result = _compute_streak(habit)
+        self.assertEqual(
+            result['count'], 1,
+            msg="W→M→W: streak must count only the 1 week since the final W restoration."
+        )
+        self.assertEqual(result['unit'], 'W')
+
     def test_config_history_field_in_serializer_output(self):
         """
         RecurrentHabitSerializerToRead includes a `config_history` field
