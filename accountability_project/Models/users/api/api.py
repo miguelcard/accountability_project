@@ -150,6 +150,20 @@ class XPStatsView(generics.GenericAPIView):
             longest=django_models.Max('streak_at_award')
         )['longest'] or 0
 
+        # Unit of the longest streak row ('W' or 'M', derived from reason)
+        # MONTHLY_HABIT is preferred on a tie since it represents more real-world time.
+        longest_streak_row = (
+            ledger_qs
+            .filter(streak_at_award=longest_streak)
+            .order_by('reason')  # 'MONTHLY_HABIT' < 'WEEKLY_HABIT' alphabetically; ascending puts MONTHLY first
+            .values('reason')
+            .first()
+        )
+        if longest_streak_row and longest_streak_row['reason'] == 'MONTHLY_HABIT':
+            longest_streak_unit = 'M'
+        else:
+            longest_streak_unit = 'W'
+
         # Distinct completed periods
         completed_periods = ledger_qs.values('period_start').distinct().count()
 
@@ -166,14 +180,15 @@ class XPStatsView(generics.GenericAPIView):
         ]
 
         payload = {
-            'total_xp':          total_xp,
-            'level':             level_info['level'],
-            'xp_into_level':     level_info['xp_into_level'],
-            'xp_for_level':      level_info['xp_for_level'],
-            'pct_to_next':       level_info['pct_to_next'],
-            'longest_streak':    longest_streak,
-            'completed_periods': completed_periods,
-            'heatmap':           heatmap_data,
+            'total_xp':            total_xp,
+            'level':               level_info['level'],
+            'xp_into_level':       level_info['xp_into_level'],
+            'xp_for_level':        level_info['xp_for_level'],
+            'pct_to_next':         level_info['pct_to_next'],
+            'longest_streak':      longest_streak,
+            'longest_streak_unit': longest_streak_unit,
+            'completed_periods':   completed_periods,
+            'heatmap':             heatmap_data,
         }
 
         serializer = self.get_serializer(payload)

@@ -100,5 +100,6 @@ class XPStatsSerializer(serializers.Serializer):
     xp_for_level          = serializers.IntegerField(help_text='XP gap required to advance to next level')
     pct_to_next           = serializers.FloatField(help_text='Progress 0.0–1.0')
     longest_streak        = serializers.IntegerField(help_text='Longest single-habit streak ever (in periods)')
+    longest_streak_unit   = serializers.CharField(help_text="Timeframe unit of the longest streak: 'W' (weekly) or 'M' (monthly)")
     completed_periods     = serializers.IntegerField(help_text='Total number of periods where at least one habit was completed')
     heatmap               = XPHeatmapEntrySerializer(many=True)
