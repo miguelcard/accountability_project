@@ -3,8 +3,8 @@ XP & Level utilities for the accountability project.
 
 XP rules
 --------
-- Base XP per completed weekly habit:  50
-- Base XP per completed monthly habit: 175
+- Base XP per completed weekly habit:  30 + (times - 1) × 5   [range: 30–60 for 1×–7×]
+- Base XP per completed monthly habit: 105 + (times - 1) × 3  [range: 105–195 for 1×–31×]
 - Streak multiplier (in *periods* of the habit's time_frame):
     < 4   → ×1.0
     4–7   → ×1.5
@@ -227,7 +227,17 @@ def compute_streak_for_habit(
 # Core award logic
 # ────────────────────────────────────────────────────────────────────────────
 
-BASE_XP = {'W': 50, 'M': 175}
+BASE_XP  = {'W': 30,  'M': 105}
+XP_STEP  = {'W':  5,  'M':   3}
+
+
+def base_xp_for(time_frame: str, times: int) -> int:
+    """Return the base XP for a completed period, scaled by repetition count.
+
+    Weekly:  30 + (times - 1) × 5   → 30 XP (1×) … 60 XP (7×)
+    Monthly: 105 + (times - 1) × 3  → 105 XP (1×) … 195 XP (31×)
+    """
+    return BASE_XP[time_frame] + (times - 1) * XP_STEP[time_frame]
 
 
 def _award_xp_core(
@@ -273,7 +283,7 @@ def _award_xp_core(
     # Pass time_frame directly to avoid a redundant config-history DB lookup
     streak  = compute_streak_for_habit(habit, period_start, time_frame_override=time_frame)
     multi   = streak_multiplier(streak)
-    base    = BASE_XP[time_frame]
+    base    = base_xp_for(time_frame, times)
     awarded = int(base * multi)
     reason  = 'WEEKLY_HABIT' if time_frame == 'W' else 'MONTHLY_HABIT'
 

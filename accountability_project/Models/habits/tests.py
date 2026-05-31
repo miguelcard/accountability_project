@@ -191,7 +191,7 @@ class XPAwardTests(TestCase):
         # We verify the ledger entry exists with correct values.
         fill_week(self.habit, PAST_MONDAY)
         entry = UserXPLedger.objects.get(user=self.user, habit=self.habit, period_start=PAST_MONDAY)
-        self.assertEqual(entry.xp_awarded, 50)
+        self.assertEqual(entry.xp_awarded, 40)  # times=3: 30 + 2×5 = 40
         self.assertEqual(entry.multiplier, Decimal('1.0'))
         self.assertEqual(entry.streak_at_award, 1)
 
@@ -217,7 +217,7 @@ class XPAwardTests(TestCase):
         last_entry = UserXPLedger.objects.get(user=self.user, period_start=PAST_MONDAY)
         self.assertEqual(last_entry.streak_at_award, 4)
         self.assertEqual(last_entry.multiplier, Decimal('1.5'))
-        self.assertEqual(last_entry.xp_awarded, 75)
+        self.assertEqual(last_entry.xp_awarded, 60)  # times=3: int(40 × 1.5) = 60
 
     def test_open_period_not_awarded(self):
         """Checkmarks in the current (still open) week should not earn XP."""
@@ -262,7 +262,7 @@ class XPAwardTests(TestCase):
         entry = UserXPLedger.objects.get(user=self.user, habit__isnull=True)
         self.assertIsNone(entry.habit_id)
         self.assertEqual(entry.habit_title_snap, 'XP Habit')
-        self.assertEqual(entry.xp_awarded, 50)
+        self.assertEqual(entry.xp_awarded, 40)  # times=3: 30 + 2×5 = 40
 
 
 # ─── Config-history: model + signal tests ────────────────────────────────────
@@ -1156,8 +1156,8 @@ class SettleStreakOrderingTests(TestCase):
         xp_vals = [e[2] for e in entries]
 
         self.assertEqual(streaks, [1, 2, 3, 4])
-        # First 3 weeks: ×1.0 = 50; 4th week: ×1.5 = 75
-        self.assertEqual(xp_vals, [50, 50, 50, 75])
+        # times=1: base=30; first 3 weeks ×1.0 = 30; 4th week ×1.5 = 45
+        self.assertEqual(xp_vals, [30, 30, 30, 45])
 
 
 class ReconcileStreakOrderingTests(TestCase):
@@ -1233,7 +1233,8 @@ class ReconcileStreakOrderingTests(TestCase):
         xp_vals = [e[1] for e in entries]
 
         self.assertEqual(streaks, [1, 2, 3, 4])
-        self.assertEqual(xp_vals, [50, 50, 50, 75])
+        # times=1: base=30; first 3 weeks ×1.0 = 30; 4th week ×1.5 = 45
+        self.assertEqual(xp_vals, [30, 30, 30, 45])
 
 
 # ─── Test 5: new config governs only periods starting after effective_from ───
