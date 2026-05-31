@@ -11,6 +11,7 @@ from Models.habits.xp_utils import (
     xp_threshold,
     level_from_xp,
     streak_multiplier,
+    base_xp_for,
     period_start_for,
     prev_period_start,
     period_end_for,
@@ -76,13 +77,13 @@ class XPThresholdTests(TestCase):
         self.assertEqual(xp_threshold(2), 500)
 
     def test_level_3(self):
-        self.assertEqual(xp_threshold(3), 1_100)
+        self.assertEqual(xp_threshold(3), 1_500)
 
     def test_level_4(self):
-        self.assertEqual(xp_threshold(4), 1_800)
+        self.assertEqual(xp_threshold(4), 2_500)
 
     def test_level_7(self):
-        self.assertEqual(xp_threshold(7), 4_500)
+        self.assertEqual(xp_threshold(7), 10_500)
 
     def test_increasing(self):
         thresholds = [xp_threshold(n) for n in range(1, 11)]
@@ -106,20 +107,20 @@ class LevelFromXPTests(TestCase):
         self.assertEqual(r['xp_into_level'], 0)
 
     def test_just_below_level_3(self):
-        r = level_from_xp(1_099)
+        r = level_from_xp(1_499)
         self.assertEqual(r['level'], 2)
 
     def test_exactly_level_3(self):
-        r = level_from_xp(1_100)
+        r = level_from_xp(1_500)
         self.assertEqual(r['level'], 3)
 
     def test_level_7_threshold(self):
-        r = level_from_xp(4_500)
+        r = level_from_xp(10_500)
         self.assertEqual(r['level'], 7)
 
     def test_pct_to_next_halfway(self):
-        # Level 2 gap = 600 (threshold(3)-threshold(2) = 1100-500)
-        r = level_from_xp(500 + 300)
+        # Level 2 gap = 1000 (threshold(3)-threshold(2) = 1500-500)
+        r = level_from_xp(500 + 500)
         self.assertEqual(r['level'], 2)
         self.assertAlmostEqual(r['pct_to_next'], 0.5, places=3)
 
@@ -141,6 +142,52 @@ class StreakMultiplierTests(TestCase):
     def test_cap_at_twelve(self):
         self.assertEqual(streak_multiplier(12), Decimal('2.5'))
         self.assertEqual(streak_multiplier(100), Decimal('2.5'))
+
+
+class BaseXPScalingTests(TestCase):
+    """Unit tests for base_xp_for() — verifies times-scaled XP values."""
+
+    # ── Weekly ────────────────────────────────────────────────────────────
+    def test_weekly_1x(self):
+        self.assertEqual(base_xp_for('W', 1), 30)
+
+    def test_weekly_3x(self):
+        # 30 + 2 × 5 = 40
+        self.assertEqual(base_xp_for('W', 3), 40)
+
+    def test_weekly_7x(self):
+        # 30 + 6 × 5 = 60
+        self.assertEqual(base_xp_for('W', 7), 60)
+
+    def test_weekly_higher_times_earns_more(self):
+        """Each additional weekly rep must award strictly more XP."""
+        values = [base_xp_for('W', t) for t in range(1, 8)]
+        self.assertEqual(values, sorted(values))
+        self.assertEqual(len(set(values)), len(values))  # all distinct
+
+    # ── Monthly ───────────────────────────────────────────────────────────
+    def test_monthly_1x(self):
+        self.assertEqual(base_xp_for('M', 1), 105)
+
+    def test_monthly_15x(self):
+        # 105 + 14 × 3 = 147
+        self.assertEqual(base_xp_for('M', 15), 147)
+
+    def test_monthly_31x(self):
+        # 105 + 30 × 3 = 195
+        self.assertEqual(base_xp_for('M', 31), 195)
+
+    def test_monthly_higher_times_earns_more(self):
+        """Each additional monthly rep must award strictly more XP."""
+        values = [base_xp_for('M', t) for t in range(1, 32)]
+        self.assertEqual(values, sorted(values))
+        self.assertEqual(len(set(values)), len(values))  # all distinct
+
+    # ── Cross-frame ───────────────────────────────────────────────────────
+    def test_monthly_always_more_than_weekly_at_same_times(self):
+        """Monthly base XP must always exceed weekly base XP at every times value."""
+        for t in range(1, 8):
+            self.assertGreater(base_xp_for('M', t), base_xp_for('W', t))
 
 
 class PeriodHelperTests(TestCase):

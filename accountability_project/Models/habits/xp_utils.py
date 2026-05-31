@@ -11,13 +11,13 @@ XP rules
     8–11  → ×2.0
     ≥ 12  → ×2.5  (cap)
 
-Level thresholds
-----------------
-Gap from level n to n+1 = 500 + (n-1) × 100
-  L1→L2: 500, L2→L3: 600, L3→L4: 700, …
+Level thresholds (hardcoded, exponential-ish)
+---------------------------------------------
+  L1:      0  L2:    500  L3:  1,500  L4:  2,500  L5:  4,000
+  L6:  6,500  L7: 10,500  L8: 16,000  L9: 24,500  L10: 37,500
 
-Total XP to reach level n  =  Σ_{i=1}^{n-1} [500 + (i-1)×100]
-                            =  (n-1)(400 + 50n)
+Gaps grow roughly ×1.5 each level (rounded to nearest 500).
+To adjust difficulty, edit XP_LEVEL_THRESHOLDS directly.
 
 Period definition
 -----------------
@@ -50,12 +50,35 @@ logger = logging.getLogger(__name__)
 # Level maths
 # ────────────────────────────────────────────────────────────────────────────
 
+# Total XP required to *reach* each level (index 0 = level 1).
+# Gaps grow roughly ×1.5 each step, rounded to the nearest 500.
+# Edit these values directly to tune level difficulty.
+XP_LEVEL_THRESHOLDS = [
+    0,       # Level 1
+    500,     # Level 2  — gap:  500
+    1_500,   # Level 3  — gap: 1,000
+    2_500,   # Level 4  — gap: 1,000
+    4_000,   # Level 5  — gap: 1,500
+    6_500,   # Level 6  — gap: 2,500
+    10_500,  # Level 7  — gap: 4,000
+    16_000,  # Level 8  — gap: 5,500
+    24_500,  # Level 9  — gap: 8,500
+    37_500,  # Level 10 — gap: 13,000
+]
+
+MAX_LEVEL = len(XP_LEVEL_THRESHOLDS)
+
+
 def xp_threshold(level: int) -> int:
     """Total XP required to *reach* `level` (level 1 = 0 XP)."""
     if level <= 1:
         return 0
-    n = level
-    return (n - 1) * (400 + 50 * n)
+    idx = level - 1
+    if idx < len(XP_LEVEL_THRESHOLDS):
+        return XP_LEVEL_THRESHOLDS[idx]
+    # Beyond the defined table: extrapolate by continuing the last gap
+    last_gap = XP_LEVEL_THRESHOLDS[-1] - XP_LEVEL_THRESHOLDS[-2]
+    return XP_LEVEL_THRESHOLDS[-1] + (idx - (len(XP_LEVEL_THRESHOLDS) - 1)) * last_gap
 
 
 def level_from_xp(total_xp: int) -> dict:
