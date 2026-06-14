@@ -1,7 +1,7 @@
 from django.http import request
 from rest_framework.permissions import IsAdminUser
 from Models.users.models import User, Tag, Language
-from Models.users.api.serializers import CheckEmailSerializer, CheckUsernameSerializer, UserSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer, UsernameAndEmailSerializer, XPStatsSerializer
+from Models.users.api.serializers import CheckEmailSerializer, CheckUsernameSerializer, UserSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer, UsernameAndEmailSerializer, XPStatsSerializer, PublicUserXPStatsSerializer
 from rest_framework import status, generics, mixins 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -189,6 +189,69 @@ class XPStatsView(generics.GenericAPIView):
             'longest_streak_unit': longest_streak_unit,
             'completed_periods':   completed_periods,
             'heatmap':             heatmap_data,
+        }
+
+        serializer = self.get_serializer(payload)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PublicUserXPStatsView(generics.GenericAPIView):
+    """
+    GET /api/v1/users/{id}/public-stats/
+
+    Returns the target user's XP summary (no heatmap). Any authenticated user
+    can read any other user's stats — no ownership restriction.
+    Returns 404 if the user does not exist.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class   = PublicUserXPStatsSerializer
+
+    def get(self, request, pk, *args, **kwargs):
+        from Models.habits.xp_utils import level_from_xp
+        from Models.habits.models import UserXPLedger
+        from django.shortcuts import get_object_or_404
+
+        target_user = get_object_or_404(User, pk=pk)
+
+        ledger_qs = UserXPLedger.objects.filter(user=target_user)
+
+        # Total XP
+        total_xp = ledger_qs.aggregate(total=Sum('xp_awarded'))['total'] or 0
+
+        # Level info
+        level_info = level_from_xp(total_xp)
+
+        # Longest streak (snapshot stored on each row)
+        longest_streak = ledger_qs.aggregate(
+            longest=django_models.Max('streak_at_award')
+        )['longest'] or 0
+
+        # Unit of the longest streak row ('W' or 'M', derived from reason)
+        # MONTHLY_HABIT is preferred on a tie since it represents more real-world time.
+        longest_streak_row = (
+            ledger_qs
+            .filter(streak_at_award=longest_streak)
+            .order_by('reason')  # 'MONTHLY_HABIT' < 'WEEKLY_HABIT' alphabetically
+            .values('reason')
+            .first()
+        )
+        if longest_streak_row and longest_streak_row['reason'] == 'MONTHLY_HABIT':
+            longest_streak_unit = 'M'
+        else:
+            longest_streak_unit = 'W'
+
+        # Distinct completed periods
+        completed_periods = ledger_qs.values('period_start').distinct().count()
+
+        payload = {
+            'level':               level_info['level'],
+            'total_xp':            total_xp,
+            'xp_into_level':       level_info['xp_into_level'],
+            'xp_for_level':        level_info['xp_for_level'],
+            'pct_to_next':         level_info['pct_to_next'],
+            'longest_streak':      longest_streak,
+            'longest_streak_unit': longest_streak_unit,
+            'completed_periods':   completed_periods,
         }
 
         serializer = self.get_serializer(payload)
