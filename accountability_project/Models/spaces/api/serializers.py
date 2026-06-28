@@ -156,10 +156,15 @@ class SpaceRoleSerializer(serializers.ModelSerializer):
 
         # distinguish if the the string sent is the user's username or email
         email_pattern = r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$'
-        if re.match(email_pattern, username_email):
-            user = User.objects.get(email=username_email)   # Get user instance by email
-        else:
-            user = User.objects.get(username=username_email)  # Get user instance by username
+        try:
+            if re.match(email_pattern, username_email):
+                user = User.objects.get(email=username_email)   # Get user instance by email
+            else:
+                user = User.objects.get(username=username_email)  # Get user instance by username
+        except User.DoesNotExist:
+            raise serializers.ValidationError({
+                'username_email': f'No user found with username or email "{username_email}".'
+            })
         return user
 
 
