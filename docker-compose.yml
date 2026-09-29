@@ -33,6 +33,35 @@ services:
         networks:
             - backend
 
+    # Runs the stale-invite cleanup once every 24h (see README: "Pending invite cleanup").
+    # No Celery/cron exists in this stack, so a plain sleep loop keeps it dependency-free.
+    invite_cleanup:
+        environment:
+            SECRET_KEY: "1iyuwk-25_bqo_l%-t+v_5h5_hlfn8+&7=euwt1x#yt231&w56"
+            DEBUG: "True"
+            NAME: "accountability"
+            USER: "postgres"
+            PASSWORD: "postgres"
+            HOST: "db"
+            PORT: "5432"
+            GOOGLE_APPLICATION_CREDENTIALS: "/code/backend/firebase-service-account.json"
+        command: >
+            sh -c "while true; do
+            python manage.py cleanup_expired_invites || echo 'cleanup_expired_invites failed';
+            sleep 86400;
+            done"
+        container_name: invite_cleanup
+        build:
+            context: ./accountability_project/
+            dockerfile: Dockerfile
+        volumes:
+            - ./accountability_project:/code/backend
+        restart: unless-stopped
+        depends_on:
+            - db
+        networks:
+            - backend
+
     db:
         image: postgres:17
         container_name: db

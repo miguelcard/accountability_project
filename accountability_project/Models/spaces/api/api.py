@@ -442,7 +442,14 @@ class InviteDetailsApiView(generics.GenericAPIView):
         if not token:
             return Response({"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        invite = get_object_or_404(PendingInvite, token=token)
+        try:
+            invite = PendingInvite.objects.select_related('space').get(token=token)
+        except PendingInvite.DoesNotExist:
+            # Expired invites are eventually purged by the cleanup_expired_invites command.
+            return Response(
+                {"detail": "This invite link is invalid or has expired."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         if invite.accepted:
             return Response({"detail": "This invite has already been used."}, status=status.HTTP_400_BAD_REQUEST)

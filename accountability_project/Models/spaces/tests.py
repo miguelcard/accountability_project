@@ -1,6 +1,9 @@
 from datetime import timedelta
+from io import StringIO
 from unittest.mock import patch
 
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.urls import reverse
@@ -117,6 +120,128 @@ class PendingInviteModelTests(TestCase):
         a = PendingInvite.objects.create(email='a@test.com', space=self.space)
         b = PendingInvite.objects.create(email='b@test.com', space=self.space)
         self.assertNotEqual(a.token, b.token)
+
+
+class CleanupExpiredInvitesCommandTests(TestCase):
+    def setUp(self):
+        self.admin = make_user('cleanup_admin', 'cleanup_admin@test.com')
+        self.space = make_space(self.admin)
+
+    def _invite(self, email, expired_days_ago=None, **extra):
+        expires_at = (
+            timezone.now() - timedelta(days=expired_days_ago)
+            if expired_days_ago is not None
+            else timezone.now() + timedelta(days=1)
+        )
+        return PendingInvite.objects.create(
+            email=email, space=self.space, invited_by=self.admin,
+            expires_at=expires_at, **extra,
+        )
+
+    def _run(self, *args):
+        output = StringIO()
+        call_command('cleanup_expired_invites', *args, stdout=output)
+        return output.getvalue()
+
+    def test_default_retention_deletes_only_invites_expired_over_30_days_ago(self):
+        old = self._invite('old@test.com', expired_days_ago=31)
+        recent = self._invite('recent@test.com', expired_days_ago=2)
+        fresh = self._invite('fresh@test.com')
+
+        out = self._run()
+
+        self.assertFalse(PendingInvite.objects.filter(pk=old.pk).exists())
+        self.assertTrue(PendingInvite.objects.filter(pk=recent.pk).exists())
+        self.assertTrue(PendingInvite.objects.filter(pk=fresh.pk).exists())
+        self.assertIn('Deleted 1 expired pending invite(s).', out)
+
+    def test_accepted_invites_are_never_deleted(self):
+        accepted = self._invite(
+            'accepted@test.com', expired_days_ago=90,
+            accepted=True, accepted_at=timezone.now() - timedelta(days=95),
+        )
+
+        self._run()
+        self._run('--older-than-days', '0')
+
+        self.assertTrue(PendingInvite.objects.filter(pk=accepted.pk).exists())
+
+    def test_older_than_days_zero_deletes_everything_expired(self):
+        just_expired = self._invite('just@test.com', expired_days_ago=0)
+        fresh = self._invite('fresh@test.com')
+
+        self._run('--older-than-days', '0')
+
+        self.assertFalse(PendingInvite.objects.filter(pk=just_expired.pk).exists())
+        self.assertTrue(PendingInvite.objects.filter(pk=fresh.pk).exists())
+
+    def test_custom_retention_window(self):
+        eight_days = self._invite('eight@test.com', expired_days_ago=8)
+        three_days = self._invite('three@test.com', expired_days_ago=3)
+
+        self._run('--older-than-days', '7')
+
+        self.assertFalse(PendingInvite.objects.filter(pk=eight_days.pk).exists())
+        self.assertTrue(PendingInvite.objects.filter(pk=three_days.pk).exists())
+
+    def test_negative_retention_is_rejected(self):
+        invite = self._invite('old@test.com', expired_days_ago=90)
+
+        with self.assertRaises(CommandError):
+            self._run('--older-than-days', '-1')
+
+        self.assertTrue(PendingInvite.objects.filter(pk=invite.pk).exists())
+
+    def test_dry_run_does_not_delete_invites(self):
+        old = self._invite('dryrun@test.com', expired_days_ago=60)
+
+        out = self._run('--dry-run')
+
+        self.assertTrue(PendingInvite.objects.filter(pk=old.pk).exists())
+        self.assertIn('Dry run: 1 expired pending invite(s) would be deleted.', out)
+
+    def test_does_not_delete_spaces_or_roles(self):
+        self._invite('old@test.com', expired_days_ago=60)
+
+        self._run()
+
+        self.assertTrue(Space.objects.filter(pk=self.space.pk).exists())
+        self.assertTrue(SpaceRole.objects.filter(space=self.space, member=self.admin).exists())
+
+    def test_logs_deleted_count(self):
+        self._invite('old@test.com', expired_days_ago=60)
+
+        with self.assertLogs('Models.spaces.management.commands.cleanup_expired_invites', level='INFO') as logs:
+            self._run()
+
+        self.assertIn('deleted 1 pending invite(s)', logs.output[0])
+
+    def test_empty_table_is_a_noop(self):
+        self.assertIn('Deleted 0 expired pending invite(s).', self._run())
+
+    def test_expired_within_retention_still_reports_expired_via_api(self):
+        """A recently expired invite survives cleanup, so the details endpoint says 'expired'."""
+        recent = self._invite('recent@test.com', expired_days_ago=2)
+        self._run()
+        client = APIClient()
+        client.force_authenticate(user=make_user('viewer', 'viewer@anon.firebase', anonymous=True))
+
+        resp = client.get(reverse('invite-details'), {'token': str(recent.token)})
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('expired', resp.data['detail'])
+
+    def test_purged_invite_returns_friendly_404_via_api(self):
+        old = self._invite('old@test.com', expired_days_ago=60)
+        token = str(old.token)
+        self._run()
+        client = APIClient()
+        client.force_authenticate(user=make_user('viewer', 'viewer@anon.firebase', anonymous=True))
+
+        resp = client.get(reverse('invite-details'), {'token': token})
+
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.data['detail'], 'This invite link is invalid or has expired.')
 
 
 # ─── SpaceRoleInviteApiView — new email path ──────────────────────────────────
