@@ -1,5 +1,8 @@
 import logging
+import uuid
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 from Models.users.models import User
 from django.core.exceptions import ValidationError
 
@@ -116,3 +119,45 @@ class SpaceRole(models.Model):
         verbose_name_plural = 'Space Roles'
         ordering = ['role']
         db_table = 'space_role'
+
+
+PENDING_INVITE_EXPIRY_DAYS = 7
+
+
+def _default_invite_expiry():
+    return timezone.now() + timedelta(days=PENDING_INVITE_EXPIRY_DAYS)
+
+
+class PendingInvite(models.Model):
+    """
+    Tracks an invitation sent to an email address that does not yet have an account.
+    When the invited person signs up, they call the accept endpoint with the token to
+    join the space.
+    """
+    email = models.EmailField(help_text="Email address the invitation was sent to.")
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='pending_invites')
+    invited_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_invites',
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=_default_invite_expiry)
+    accepted = models.BooleanField(default=False)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f'[{self.id}] {self.email} → {self.space.name}'
+
+    @property
+    def is_valid(self):
+        return not self.accepted and timezone.now() < self.expires_at
+
+    class Meta:
+        verbose_name = 'Pending Invite'
+        verbose_name_plural = 'Pending Invites'
+        ordering = ['-created_at']
+        db_table = 'pending_invite'

@@ -1,6 +1,7 @@
 from django.urls import path
 from Models.spaces.api.api import (SpaceUsersApiView, SpacesApiView, SpacesDetailApiView, SpacesDetailRetrieveWithHabitsApiView, SpaceHabitsApiView, 
-SpaceRoleDeleteApiView, SpaceRoleInviteApiView, SpaceRoleEditApiView, SpaceRolesListApiView, SpaceMemberRemoveApiView, CalendarAPIView)
+SpaceRoleDeleteApiView, SpaceRoleInviteApiView, SpaceRoleEditApiView, SpaceRolesListApiView, SpaceMemberRemoveApiView, CalendarAPIView,
+InviteDetailsApiView, InviteAcceptApiView)
 
 urlpatterns = [
     path('v1/spaces/', SpacesApiView.as_view(), name='spaces'),
@@ -14,4 +15,7 @@ urlpatterns = [
     path('v1/spaceroles/delete/<int:pk>', SpaceRoleDeleteApiView.as_view(), name='spacerole-delete'),
     path('v1/spaceroles/invite/', SpaceRoleInviteApiView.as_view(), name='spacerole-invite'),
     path('v1/spaceroles/manage/<int:pk>', SpaceRoleEditApiView.as_view(), name='spacerole-edit'),
+    # Pending invite flow for users who do not yet have an account
+    path('v1/invites/details/', InviteDetailsApiView.as_view(), name='invite-details'),
+    path('v1/invites/accept/', InviteAcceptApiView.as_view(), name='invite-accept'),
 ]

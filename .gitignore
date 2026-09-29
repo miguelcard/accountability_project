@@ -12,6 +12,9 @@ idea/
 firebase-service-account.json
 **/firebase-service-account.json
 
+# Local environment variables — contains secrets, never commit
+.env
+
 
 # __________Front-end________
 

@@ -1,9 +1,12 @@
 import logging
+import re
+from django.conf import settings
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import generics, status
-from Models.spaces.models import Space, SpaceRole
+from Models.spaces.models import Space, SpaceRole, PendingInvite, PENDING_INVITE_EXPIRY_DAYS
 from Models.users.models import User
 from Models.spaces.api.serializers import SimpleUserSerializer, SpaceSerializer, SpaceSerializerToReadWithHabitsAndMembers, SpaceRoleSerializer, SpaceRoleSerializerForEdition
 from django.db.models import Q
@@ -21,6 +24,9 @@ from django.core.exceptions import ValidationError
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
+from utils.email_service import send_space_invite_email
+
+_EMAIL_PATTERN = re.compile(r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$')
 
 logger = logging.getLogger(__name__)
 
@@ -219,13 +225,71 @@ class SpaceRoleDeleteApiView(SpaceRoleCleanupMixin, generics.GenericAPIView):
 # POST
 class SpaceRoleInviteApiView(generics.CreateAPIView):
     """
-    Creates a Spacerole / a role for a user in a space, requested by an existing user of
-    that space, i.e. the endpoint where one user adds another one to the space
+    Creates a SpaceRole / a role for a user in a space.
+    If the given email does not belong to any existing user, a PendingInvite is created
+    and an invitation email is sent via Resend so the recipient can sign up and join.
     """
     permission_classes = [IsAuthenticated, BelongsToSpaceFromSpaceRole, HasEqualOrHigherRoleAsNewUser]
     serializer_class = SpaceRoleSerializer
 
-    # throw custom error message to the GUI (but error is thrown first from the serializer in case in happens, this is build for extra security)
+    # NOTE on permission ordering: BelongsToSpaceFromSpaceRole.has_permission() calls
+    # view.get_serializer(data=request.data).is_valid(raise_exception=True) *before* create()
+    # runs below. This only works safely because SpaceRoleSerializer.create() (where the
+    # "no user found" error is raised) is never invoked during is_valid(). If user-resolution
+    # logic is ever moved into the serializer's validate(), the new-email invite branch below
+    # would break silently — keep that logic in create()/perform_create() only.
+    @method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True))
+    def create(self, request, *args, **kwargs):
+        username_email = request.data.get('username_email', '')
+
+        # Only intercept when the input looks like an email and no user has that email yet.
+        if _EMAIL_PATTERN.match(username_email) and not User.objects.filter(email=username_email).exists():
+            space_id = request.data.get('space')
+            space = get_object_or_404(Space, pk=space_id)
+
+            # Replace any previous pending (unaccepted) invite for this email+space
+            # so re-inviting refreshes the expiry and resends the email.
+            # Wrapped in a transaction so the delete+create pair is atomic; the email send
+            # itself happens outside the transaction (external I/O should not hold a DB lock),
+            # and is rolled back manually via invite.delete() below if it fails.
+            with transaction.atomic():
+                PendingInvite.objects.filter(email=username_email, space=space, accepted=False).delete()
+                invite = PendingInvite.objects.create(
+                    email=username_email,
+                    space=space,
+                    invited_by=request.user,
+                )
+
+            invite_link = f"{settings.FRONTEND_URL}/signup?invite={invite.token}"
+            try:
+                send_space_invite_email(
+                    to_email=username_email,
+                    invite_link=invite_link,
+                    space_name=space.name,
+                    invited_by_username=request.user.username,
+                    expiry_days=PENDING_INVITE_EXPIRY_DAYS,
+                )
+            except Exception:
+                logger.exception("Failed to send invite email to %s for space %s", username_email, space.id)
+                invite.delete()
+                return Response(
+                    {"detail": "Failed to send invitation email. Please try again."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            logger.info(
+                "Pending invite created for email=%s space=%s by user=%s",
+                username_email, space.id, request.user.username,
+            )
+            return Response(
+                {"detail": f"Invitation email sent to {username_email}", "invited": True},
+                status=status.HTTP_200_OK,
+            )
+
+        # Existing user path — delegate to the serializer as before.
+        return super().create(request, *args, **kwargs)
+
+    # throw custom error message to the GUI (but error is thrown first from the serializer in case it happens, this is built for extra security)
     def perform_create(self, serializer):
         try:
             spaceRole = serializer.save()
@@ -360,3 +424,105 @@ class CalendarAPIView(generics.ListAPIView):
         logger.info(f'Get all recurrent habits from space with id: {space_id}')
         space = get_object_or_404(Space, id=space_id, members=self.request.user)
         return space.space_habits.select_subclasses()
+
+
+# GET — validate a pending invite token and return masked email + space name
+class InviteDetailsApiView(generics.GenericAPIView):
+    """
+    Returns the masked email and space name for a pending invite token.
+    Used by the signup page to show the invited user what space they are joining.
+
+    GET /v1/invites/details/?token=<uuid>
+    """
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='60/h', method='GET', block=True))
+    def get(self, request, *args, **kwargs):
+        token = request.query_params.get('token', '').strip()
+        if not token:
+            return Response({"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        invite = get_object_or_404(PendingInvite, token=token)
+
+        if invite.accepted:
+            return Response({"detail": "This invite has already been used."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not invite.is_valid:
+            return Response({"detail": "This invite has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mask the email so it cannot be harvested: jo***@example.com
+        # Defensive fallback in case invite.email is ever malformed (e.g. edited via admin/migration).
+        if '@' in invite.email:
+            local, domain = invite.email.split('@', 1)
+            masked_local = local[:2] + '***' if len(local) > 2 else '***'
+            masked_email = f"{masked_local}@{domain}"
+        else:
+            masked_email = '***'
+
+        return Response({
+            "space_name": invite.space.name,
+            "masked_email": masked_email,
+        })
+
+
+# POST — accept a pending invite after the user has created an account
+class InviteAcceptApiView(generics.GenericAPIView):
+    """
+    Accepts a pending invite and creates a SpaceRole for the authenticated user.
+    The user must have already signed up (i.e. must not be anonymous).
+
+    POST /v1/invites/accept/
+    Body: { "token": "<uuid>" }
+    """
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='user', rate='20/h', method='POST', block=True))
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        token = request.data.get('token', '').strip()
+        if not token:
+            return Response({"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Reject anonymous users — they must complete signup first.
+        if request.user.is_anonymous_firebase_user:
+            return Response(
+                {"detail": "Please complete account registration before accepting an invite."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Lock the row to prevent two simultaneous requests from both accepting the same invite.
+        try:
+            invite = PendingInvite.objects.select_for_update().get(token=token)
+        except PendingInvite.DoesNotExist:
+            return Response({"detail": "Invite not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if invite.accepted:
+            return Response({"detail": "This invite has already been used."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not invite.is_valid:
+            return Response({"detail": "This invite has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Case-insensitive comparison to handle email normalisation differences.
+        if (request.user.email or '').lower() != invite.email.lower():
+            return Response(
+                {"detail": "This invite is for a different email address."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            SpaceRole.objects.create(member=request.user, space=invite.space, role='member')
+        except ValidationError as error:
+            raise DRFValidationError({"errors": error.message_dict})
+
+        invite.accepted = True
+        invite.accepted_at = timezone.now()
+        invite.save(update_fields=['accepted', 'accepted_at'])
+
+        logger.info(
+            "User %s accepted invite to space %s (invite id=%s)",
+            request.user.username, invite.space.id, invite.id,
+        )
+        return Response(
+            {"detail": f"Successfully joined space '{invite.space.name}'.", "space_id": invite.space.id},
+            status=status.HTTP_201_CREATED,
+        )

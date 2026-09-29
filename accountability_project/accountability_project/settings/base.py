@@ -232,4 +232,15 @@ CACHES = {
 # Use the default cache for rate limiting
 RATELIMIT_USE_CACHE = 'default'
 
+# ──────────────────────────────────────────────────────────────
+# Resend (transactional email)
+# ──────────────────────────────────────────────────────────────
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@example.com')
+# Optional: publicly accessible URL of the AvidHabits logo to include in emails.
+# Leave unset to use a styled text header instead.
+AVIDHABITS_LOGO_URL = os.environ.get('AVIDHABITS_LOGO_URL', '')
+# Full URL of the frontend app, used to build invite links in emails
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
 

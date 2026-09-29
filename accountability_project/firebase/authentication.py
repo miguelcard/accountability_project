@@ -18,6 +18,7 @@ corresponding Django ``User`` is returned (auto-created on first sight).
 import logging
 
 from django.conf import settings
+from django.db import IntegrityError, transaction
 from firebase_admin import auth as firebase_auth
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication
@@ -83,6 +84,39 @@ class FirebaseAuthentication(BaseAuthentication):
 
         try:
             user = User.objects.get(firebase_uid=firebase_uid)
+            # If this was an anonymous user who has since linked an email/password account,
+            # sync the new email and clear the anonymous flag so the Django user reflects
+            # the upgrade transparently on the very next request.
+            if user.is_anonymous_firebase_user:
+                sign_in_provider = decoded_token.get("firebase", {}).get("sign_in_provider", "")
+                new_email = decoded_token.get("email", "")
+                if sign_in_provider != "anonymous" and new_email:
+                    user.email = new_email
+                    user.is_anonymous_firebase_user = False
+                    try:
+                        # Wrapped in its own savepoint so an IntegrityError (email already
+                        # taken) only rolls back this save, not any outer transaction the
+                        # caller might be running in (e.g. if ATOMIC_REQUESTS is ever enabled).
+                        with transaction.atomic():
+                            user.save(update_fields=["email", "is_anonymous_firebase_user", "updated_at"])
+                        logger.info(
+                            "Upgraded anonymous user id=%s to email account (email=%s)",
+                            user.pk,
+                            new_email,
+                        )
+                    except IntegrityError:
+                        # Another Django user already owns this email (e.g. a previous
+                        # registration). Revert the in-memory changes so the returned
+                        # object reflects the real (unchanged) DB state, log, and continue —
+                        # the user stays anonymous on the Django side until the conflict is resolved.
+                        user.email = User.objects.get(pk=user.pk).email
+                        user.is_anonymous_firebase_user = True
+                        logger.warning(
+                            "Could not upgrade anonymous user id=%s to email=%s: "
+                            "email already belongs to another account.",
+                            user.pk,
+                            new_email,
+                        )
             return user
         except User.DoesNotExist:
             pass

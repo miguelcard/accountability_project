@@ -11,6 +11,10 @@ services:
             PORT: "5432"
             # Path to the Firebase service-account key inside the container
             GOOGLE_APPLICATION_CREDENTIALS: "/code/backend/firebase-service-account.json"
+            # Resend transactional email — set your real key here
+            RESEND_API_KEY: "${RESEND_API_KEY:-}"
+            DEFAULT_FROM_EMAIL: "${DEFAULT_FROM_EMAIL:-noreply@example.com}"
+            FRONTEND_URL: "${FRONTEND_URL:-http://localhost:3000}"
         # restart: always
         command: python manage.py runserver 0.0.0.0:8000
         container_name: back
