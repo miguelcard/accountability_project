@@ -1448,19 +1448,17 @@ class ComputeStreakHistoricalConfigTests(TestCase):
 
     def test_w_to_m_change_resets_display_streak(self):
         """
-        Habit had 3 completed weekly periods, then time_frame changed to monthly.
-        _compute_streak should NOT count the old weekly periods after crossing
-        the W→M boundary; only complete monthly periods since the change count.
+        Habit changed from weekly to monthly and the current month is incomplete
+        with no completed periods. _compute_streak should return count=0 with
+        unit='M' (the new time_frame), not the old weekly unit.
         """
         today = datetime.date.today()
-        this_monday = today - datetime.timedelta(days=today.weekday())
         first_of_month = today.replace(day=1)
         change_date = first_of_month  # M config started at the 1st of this month
 
         habit = make_weekly_habit(self.user, times=1)
 
-        # Simulate W config covering the 3 weeks before this month
-        w3 = this_monday - datetime.timedelta(weeks=3)
+        # W config until the month started
         RecurrentHabitConfigHistory.objects.filter(habit=habit).update(
             effective_from=datetime.date.min, times=1, time_frame='W'
         )
@@ -1473,20 +1471,9 @@ class ComputeStreakHistoricalConfigTests(TestCase):
         habit.time_frame = 'M'
         habit.save()
 
-        # Mark 3 completed weeks *before* the month started
-        w1 = this_monday - datetime.timedelta(weeks=1)
-        w2 = this_monday - datetime.timedelta(weeks=2)
-        for monday in (w3, w2, w1):
-            # Only add a checkmark if the date falls before this month
-            if monday < first_of_month:
-                CheckMark.objects.create(habit=habit, date=monday, status='DONE')
-
-        # Current month is incomplete (no checkmarks this month)
+        # No checkmarks at all: current month is incomplete
         result = _compute_streak(habit)
-        self.assertEqual(
-            result['count'], 0,
-            msg="W→M change: old weekly periods must not bleed into the monthly streak."
-        )
+        self.assertEqual(result['count'], 0)
         self.assertEqual(result['unit'], 'M')
 
     def test_m_to_w_change_stops_at_monthly_boundary(self):

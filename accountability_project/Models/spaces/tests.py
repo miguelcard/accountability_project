@@ -3,6 +3,7 @@ from io import StringIO
 from unittest.mock import patch
 
 from django.core.management import call_command
+from django.db import transaction
 from django.core.management.base import CommandError
 from django.test import TestCase
 from django.core.exceptions import ValidationError
@@ -451,3 +452,64 @@ class InviteAcceptTests(TestCase):
         self.assertEqual(resp2.status_code, 400)
         self.assertEqual(SpaceRole.objects.filter(member=joiner, space=self.space).count(), 1)
 
+
+
+class SpaceAddedPushTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = make_user('admin2', 'admin2@test.com')
+        self.member = make_user('member2', 'member2@test.com')
+        self.space = make_space(self.admin)
+        self.client.force_authenticate(user=self.admin)
+        self.url = reverse('spacerole-invite')
+
+    @patch('Models.spaces.api.api.notify_user')
+    def test_push_sent_to_added_user_after_commit(self, mock_notify):
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(self.url, {'username_email': 'member2', 'role': 'member', 'space': self.space.id})
+        self.assertEqual(resp.status_code, 201)
+        mock_notify.assert_called_once()
+        self.assertEqual(mock_notify.call_args.args[0], self.member)
+
+    @patch('Models.spaces.api.api.notify_user')
+    def test_no_push_before_commit(self, mock_notify):
+        self.client.post(self.url, {'username_email': 'member2', 'role': 'member', 'space': self.space.id})
+        mock_notify.assert_not_called()
+
+    @patch('Models.spaces.api.api.notify_user')
+    def test_no_push_for_self_action(self, mock_notify):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(self.url, {'username_email': 'admin2', 'role': 'admin', 'space': self.space.id})
+        mock_notify.assert_not_called()
+
+    @patch('Models.spaces.api.api.notify_user')
+    def test_no_push_when_surrounding_transaction_rolls_back(self, mock_notify):
+        with self.captureOnCommitCallbacks(execute=True):
+            try:
+                with transaction.atomic():
+                    self.client.post(self.url, {'username_email': 'member2', 'role': 'member', 'space': self.space.id})
+                    raise RuntimeError('force rollback after the role was created')
+            except RuntimeError:
+                pass
+        self.assertFalse(SpaceRole.objects.filter(member=self.member, space=self.space).exists())
+        mock_notify.assert_not_called()
+
+    @patch('Models.spaces.api.api.notify_user')
+    def test_push_content_names_actor_and_space_only(self, mock_notify):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(self.url, {'username_email': 'member2', 'role': 'member', 'space': self.space.id})
+        kwargs = mock_notify.call_args.kwargs
+        self.assertEqual(kwargs['body'], f'admin2 added you to {self.space.name}')
+        self.assertEqual(kwargs['data'], {'type': 'space_added', 'space_id': self.space.id})
+        # Lock-screen safe: no email addresses or other personal data in the payload.
+        everything = f"{kwargs['title']} {kwargs['body']} {kwargs['data']}"
+        self.assertNotIn('@', everything)
+
+    @patch('Models.spaces.api.api.notify_user')
+    def test_no_push_when_add_fails_validation(self, mock_notify):
+        resp_before = SpaceRole.objects.count()
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(self.url, {'username_email': 'nobody_here', 'role': 'member', 'space': self.space.id})
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(SpaceRole.objects.count(), resp_before)
+        mock_notify.assert_not_called()

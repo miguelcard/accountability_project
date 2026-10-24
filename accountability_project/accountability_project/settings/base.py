@@ -46,6 +46,7 @@ LOCAL_APPS = [
     'Models.users.apps.UsersConfig',
     'Models.habits.apps.HabitsConfig',
     'Models.spaces.apps.SpacesConfig',
+    'Models.notifications.apps.NotificationsConfig',
     'firebase.apps.FirebaseConfig',
 ]
 

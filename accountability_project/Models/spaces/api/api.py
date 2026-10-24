@@ -25,6 +25,7 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from utils.email_service import send_space_invite_email
+from Models.notifications.services import notify_user
 
 _EMAIL_PATTERN = re.compile(r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$')
 
@@ -294,9 +295,23 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
         try:
             spaceRole = serializer.save()
             logger.info(f'saving new space role for invited user {spaceRole.member.username} on space {spaceRole.space.id}')
+            self._notify_added_to_space(spaceRole)
         except ValidationError as error:
             logger.info(f'spaceRole could not be created because it invited user exceeds the max amount of spaces he can belong to')
             raise DRFValidationError({"errors": error.message_dict})
+
+    def _notify_added_to_space(self, space_role):
+        actor = self.request.user
+        recipient = space_role.member
+        if recipient.pk == actor.pk:
+            return
+        # on_commit: no push is sent if the surrounding transaction rolls back
+        transaction.on_commit(lambda: notify_user(
+            recipient,
+            title="Added to a space",
+            body=f"{actor.username} added you to {space_role.space.name}",
+            data={"type": "space_added", "space_id": space_role.space_id},
+        ))
 
 # PUT, PATCH
 class SpaceRoleEditApiView(generics.RetrieveUpdateAPIView):
