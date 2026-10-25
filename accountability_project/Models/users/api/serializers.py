@@ -1,6 +1,12 @@
+import re
+
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from Models.users.models import User, Tag, Language
 from datetime import date
+
+USERNAME_PATTERN = re.compile(r'[a-z0-9_-]{3,20}')
+RESERVED_USERNAME_PREFIX = 'fb_'
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -22,12 +28,47 @@ class UserGetAgeSerializer():
         rest = 1 if (today.month, today.day) < (born.month, born.day) else 0
         return today.year - born.year - rest
   
-class UserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
+def case_insensitive_username_validators():
+    return [UniqueValidator(
+        queryset=User.objects.all(),
+        lookup='iexact',
+        message='A user with that username already exists.',
+    )]
+
+
+class UsernameRulesMixin:
+    """
+    Usernames are case-insensitive and stored lowercase (see User.save), restricted to
+    lowercase ASCII letters, digits, '-' and '_' (3-20 chars), and may not use the 'fb_' prefix
+    reserved for placeholder usernames of auto-created Firebase users.
+    """
+
+    def validate_username(self, value):
+        if value is None:
+            return value
+
+        value = value.strip().lower()
+
+        # Leave an unchanged username alone so legacy/placeholder users can still edit other fields.
+        if self.instance is not None and value == self.instance.username:
+            return value
+
+        if not USERNAME_PATTERN.fullmatch(value):
+            raise serializers.ValidationError(
+                'Username must be 3-20 characters long and only contain letters, numbers, dashes and underscores.'
+            )
+        if value.startswith(RESERVED_USERNAME_PREFIX):
+            raise serializers.ValidationError(f'Username cannot start with "{RESERVED_USERNAME_PREFIX}".')
+        return value
+
+
+class UserSerializer(UsernameRulesMixin, serializers.ModelSerializer, UserGetAgeSerializer):
     age = serializers.SerializerMethodField(method_name='get_age')
     tags = TagSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     class Meta:
         model = User
+        extra_kwargs = {'username': {'validators': case_insensitive_username_validators()}}
         fields = (
             "id",
             "firebase_uid",
@@ -56,7 +97,7 @@ class UserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
         )
 
 
-class GetAuthenticatedUserSerializer(serializers.ModelSerializer, UserGetAgeSerializer):
+class GetAuthenticatedUserSerializer(UsernameRulesMixin, serializers.ModelSerializer, UserGetAgeSerializer):
     tags = TagSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     age = serializers.SerializerMethodField(method_name='get_age')
@@ -66,6 +107,7 @@ class GetAuthenticatedUserSerializer(serializers.ModelSerializer, UserGetAgeSeri
     class Meta:
         model = User
         exclude = ("password",) 
+        extra_kwargs = {'username': {'validators': case_insensitive_username_validators()}}
         read_only_fields = (
             "age",
         )

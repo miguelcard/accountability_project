@@ -328,6 +328,37 @@ class InviteNewEmailTests(TestCase):
         self.assertFalse(PendingInvite.objects.filter(email='existing@test.com').exists())
         mock_send.assert_not_called()
 
+    @patch('Models.spaces.api.api.send_space_invite_email')
+    def test_invite_existing_user_by_email_is_case_insensitive(self, mock_send):
+        make_user('existing', 'existing@test.com')
+        resp = self.client.post(self.url, {
+            'username_email': 'Existing@Test.com',
+            'role': 'member',
+            'space': self.space.id,
+        })
+        self.assertEqual(resp.status_code, 201)
+        self.assertFalse(PendingInvite.objects.exists())
+        mock_send.assert_not_called()
+
+    @patch('Models.spaces.api.api.send_space_invite_email')
+    def test_invite_existing_user_by_username_is_case_insensitive(self, mock_send):
+        existing = make_user('miggy', 'miggy@test.com')
+        resp = self.client.post(self.url, {
+            'username_email': 'MiGgY',
+            'role': 'member',
+            'space': self.space.id,
+        })
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(SpaceRole.objects.filter(member=existing, space=self.space).exists())
+
+    @patch('Models.spaces.api.api.send_space_invite_email')
+    def test_reinviting_email_with_different_case_replaces_old_invite(self, mock_send):
+        for email in ('NewPerson@Example.com', 'newperson@example.com'):
+            self.client.post(self.url, {'username_email': email, 'role': 'member', 'space': self.space.id})
+        invites = PendingInvite.objects.filter(space=self.space)
+        self.assertEqual(invites.count(), 1)
+        self.assertEqual(invites.first().email, 'newperson@example.com')
+
 
 # ─── InviteDetailsApiView ─────────────────────────────────────────────────────
 

@@ -30,7 +30,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         identifier = options['user']
-        user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
+        user = User.objects.filter(Q(username=identifier.strip().lower()) | Q(email__iexact=identifier.strip())).first()
         if user is None:
             raise CommandError(f'No user found with username or email "{identifier}".')
 

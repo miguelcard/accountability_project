@@ -127,7 +127,7 @@ class FirebaseAuthentication(BaseAuthentication):
         email = decoded_token.get("email", "")
         is_anonymous = decoded_token.get("firebase", {}).get("sign_in_provider") == "anonymous"
 
-        username = f"fb_{firebase_uid[:20]}"  # deterministic, unique-enough
+        username = f"fb_{firebase_uid[:20].lower()}"  # deterministic, unique-enough
 
         user = User(
             firebase_uid=firebase_uid,

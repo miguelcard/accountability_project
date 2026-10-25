@@ -241,10 +241,11 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
     # would break silently — keep that logic in create()/perform_create() only.
     @method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True))
     def create(self, request, *args, **kwargs):
-        username_email = request.data.get('username_email', '')
+        username_email = request.data.get('username_email', '').strip()
 
         # Only intercept when the input looks like an email and no user has that email yet.
-        if _EMAIL_PATTERN.match(username_email) and not User.objects.filter(email=username_email).exists():
+        if _EMAIL_PATTERN.match(username_email) and not User.objects.filter(email__iexact=username_email).exists():
+            username_email = username_email.lower()
             space_id = request.data.get('space')
             space = get_object_or_404(Space, pk=space_id)
 
@@ -254,7 +255,7 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
             # itself happens outside the transaction (external I/O should not hold a DB lock),
             # and is rolled back manually via invite.delete() below if it fails.
             with transaction.atomic():
-                PendingInvite.objects.filter(email=username_email, space=space, accepted=False).delete()
+                PendingInvite.objects.filter(email__iexact=username_email, space=space, accepted=False).delete()
                 invite = PendingInvite.objects.create(
                     email=username_email,
                     space=space,

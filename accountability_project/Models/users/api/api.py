@@ -9,7 +9,9 @@ from rest_framework.filters import SearchFilter
 from Models.users.api.pagination import GenericUserPagination
 from django.db.models import Q, Sum
 from django.db import models as django_models
+from django.db import IntegrityError, transaction
 from rest_framework import permissions
+from rest_framework.exceptions import ValidationError
 
 class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
@@ -26,6 +28,16 @@ class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
         if self.request is not None and self.request.method == 'PUT':
             return UserSerializer
         return GetAuthenticatedUserSerializer
+
+    def perform_update(self, serializer):
+        # The serializer validators catch duplicates up front, but two simultaneous requests can both
+        # pass them; the DB constraints then decide, and the loser should get a 400 rather than a 500.
+        try:
+            with transaction.atomic():
+                serializer.save()
+        except IntegrityError:
+            field = 'username' if 'username' in serializer.validated_data else 'email'
+            raise ValidationError({field: [f'A user with that {field} already exists.']})
 
 class GetAllUserTagsApiView(generics.ListAPIView):
     queryset = Tag.objects.all()
@@ -106,8 +118,8 @@ class CheckEmailUsernameView(generics.RetrieveAPIView):
         email = email_serializer.validated_data.get('email')
         username = username_serializer.validated_data.get('username')
 
-        user_with_email = User.objects.filter(email=email.lower()).exists() if email else False
-        user_with_username = User.objects.filter(username=username.lower()).exists() if username else False
+        user_with_email = User.objects.filter(email__iexact=email).exists() if email else False
+        user_with_username = User.objects.filter(username=username.strip().lower()).exists() if username else False
 
         return Response({'email_taken': user_with_email, 'username_taken': user_with_username}, status=status.HTTP_200_OK)
 

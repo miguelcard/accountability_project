@@ -1,5 +1,6 @@
 
 from django.db import models
+from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from simple_history.models import HistoricalRecords
 
@@ -85,6 +86,20 @@ class User(AbstractBaseUser, PermissionsMixin):
         """meta caracters"""
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+        constraints = [
+            # username is unique (exact) and always lowercase -> unique ignoring case as well
+            models.CheckConstraint(
+                condition=models.Q(username=Lower('username')),
+                name='user_username_is_lowercase',
+            ),
+            models.UniqueConstraint(Lower('email'), name='user_email_ci_unique'),
+        ]
+
+    def save(self, *args, **kwargs):
+        # Usernames are case-insensitive: always stored lowercase.
+        if self.username:
+            self.username = self.username.strip().lower()
+        super().save(*args, **kwargs)
 
     USERNAME_FIELD = 'email'  # Kept for Django admin / createsuperuser
     REQUIRED_FIELDS = []  # Only email + password prompted by createsuperuser
