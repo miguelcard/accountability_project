@@ -316,6 +316,19 @@ class InviteNewEmailTests(TestCase):
         self.assertFalse(PendingInvite.objects.filter(email='newperson@example.com').exists())
 
     @patch('Models.spaces.api.api.send_space_invite_email')
+    def test_provider_rejection_returns_503_and_cleans_up_invite(self, mock_send):
+        from resend.exceptions import ResendError
+        mock_send.side_effect = ResendError.__new__(ResendError)  # skip SDK-version-specific __init__ args
+        resp = self.client.post(self.url, {
+            'username_email': 'newperson@example.com',
+            'role': 'member',
+            'space': self.space.id,
+        })
+        self.assertEqual(resp.status_code, 503)
+        self.assertIn("can't send invitation emails", resp.json()['detail'])
+        self.assertFalse(PendingInvite.objects.filter(email='newperson@example.com').exists())
+
+    @patch('Models.spaces.api.api.send_space_invite_email')
     def test_invite_existing_user_uses_normal_path(self, mock_send):
         existing = make_user('existing', 'existing@test.com')
         resp = self.client.post(self.url, {
@@ -401,6 +414,20 @@ class InviteDetailsTests(TestCase):
         resp = self.client.get(self.url, {'token': str(self.invite.token)})
         self.assertEqual(resp.status_code, 400)
 
+    def test_no_email_param_means_no_email_matches_field(self):
+        resp = self.client.get(self.url, {'token': str(self.invite.token)})
+        self.assertNotIn('email_matches', resp.data)
+
+    def test_email_param_matching_invite_is_case_and_space_insensitive(self):
+        resp = self.client.get(self.url, {'token': str(self.invite.token), 'email': '  Invited@TEST.com '})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.data['email_matches'])
+
+    def test_email_param_not_matching_invite_is_reported(self):
+        resp = self.client.get(self.url, {'token': str(self.invite.token), 'email': 'invited0@test.com'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.data['email_matches'])
+
 
 # ─── InviteAcceptApiView ──────────────────────────────────────────────────────
 
@@ -482,6 +509,33 @@ class InviteAcceptTests(TestCase):
         resp2 = self.client.post(self.url, {'token': str(self.invite.token)})
         self.assertEqual(resp2.status_code, 400)
         self.assertEqual(SpaceRole.objects.filter(member=joiner, space=self.space).count(), 1)
+
+    @patch('Models.spaces.api.api.firebase_auth.update_user')
+    def test_accepting_marks_the_firebase_email_as_verified(self, mock_update_user):
+        joiner = self._joiner()
+        self.client.force_authenticate(user=joiner)
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(self.url, {'token': str(self.invite.token)})
+        self.assertEqual(resp.status_code, 201)
+        mock_update_user.assert_called_once_with(joiner.firebase_uid, email_verified=True)
+
+    @patch('Models.spaces.api.api.firebase_auth.update_user', side_effect=Exception('firebase down'))
+    def test_firebase_failure_does_not_fail_the_accept(self, _mock):
+        joiner = self._joiner()
+        self.client.force_authenticate(user=joiner)
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(self.url, {'token': str(self.invite.token)})
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(SpaceRole.objects.filter(member=joiner, space=self.space).exists())
+
+    @patch('Models.spaces.api.api.firebase_auth.update_user')
+    def test_rejected_accept_does_not_mark_email_verified(self, mock_update_user):
+        wrong_user = make_user('wrongperson', 'wrong@test.com')
+        self.client.force_authenticate(user=wrong_user)
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(self.url, {'token': str(self.invite.token)})
+        self.assertEqual(resp.status_code, 403)
+        mock_update_user.assert_not_called()
 
 
 

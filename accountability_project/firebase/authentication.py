@@ -138,7 +138,17 @@ class FirebaseAuthentication(BaseAuthentication):
 
         # No usable password — these users authenticate via Firebase.
         user.set_unusable_password()
-        user.save()
+        try:
+            # Own savepoint, so a lost race below does not poison an outer transaction.
+            with transaction.atomic():
+                user.save()
+        except IntegrityError:
+            # A brand-new user typically fires several requests at once; another one won the race
+            # and already created this Firebase user. Use that row instead of failing with a 500.
+            existing = User.objects.filter(firebase_uid=firebase_uid).first()
+            if existing is None:
+                raise
+            return existing
 
         logger.info(
             "Auto-created user id=%s for firebase_uid=%s (anonymous=%s)",

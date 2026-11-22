@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 
 from Models.users.models import User
@@ -96,3 +98,19 @@ class GetOrCreateUserTests(TestCase):
         result_user.refresh_from_db()
         self.assertTrue(result_user.is_anonymous_firebase_user)
         self.assertNotEqual(result_user.email, "taken@test.com")
+
+
+    def test_concurrent_first_requests_do_not_fail_with_integrity_error(self):
+        """
+        A brand-new user fires several requests at once. If another request already created the
+        row between our lookup and our insert, we must return that row instead of crashing.
+        """
+        token = make_decoded_token("uid_race", "anonymous")
+        existing = FirebaseAuthentication._get_or_create_user(token)
+
+        # Make the lookup miss (as if it ran before the other request committed), so the insert collides.
+        with patch.object(User.objects, "get", side_effect=User.DoesNotExist):
+            result = FirebaseAuthentication._get_or_create_user(token)
+
+        self.assertEqual(result.pk, existing.pk)
+        self.assertEqual(User.objects.filter(firebase_uid="uid_race").count(), 1)

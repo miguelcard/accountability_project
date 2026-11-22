@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from firebase_admin import auth as firebase_auth
 from django.utils import timezone
 from rest_framework import generics, status
 from Models.spaces.models import Space, SpaceRole, PendingInvite, PENDING_INVITE_EXPIRY_DAYS
@@ -24,6 +25,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
+from resend.exceptions import ResendError
 from utils.email_service import send_space_invite_email
 from Models.notifications.services import notify_user
 
@@ -271,6 +273,15 @@ class SpaceRoleInviteApiView(generics.CreateAPIView):
                     invited_by_username=request.user.username,
                     expiry_days=PENDING_INVITE_EXPIRY_DAYS,
                 )
+            except ResendError:
+                # The email provider refused the request (e.g. unverified sending domain or
+                # sandbox restrictions). Not the inviter's fault, so report it as unavailable.
+                logger.exception("Resend rejected invite email to %s for space %s", username_email, space.id)
+                invite.delete()
+                return Response(
+                    {"detail": "We can't send invitation emails right now. Please try again later or ask the person to sign up and share their username with you."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
             except Exception:
                 logger.exception("Failed to send invite email to %s for space %s", username_email, space.id)
                 invite.delete()
@@ -482,10 +493,24 @@ class InviteDetailsApiView(generics.GenericAPIView):
         else:
             masked_email = '***'
 
-        return Response({
+        response = {
             "space_name": invite.space.name,
             "masked_email": masked_email,
-        })
+        }
+        # Optional pre-check so the signup page can reject a mistyped email BEFORE it links the
+        # email to the user's Firebase account (which cannot be undone from the page).
+        candidate_email = request.query_params.get('email', '').strip()
+        if candidate_email:
+            response["email_matches"] = candidate_email.lower() == invite.email.lower()
+        return Response(response)
+
+
+def _mark_firebase_email_verified(firebase_uid):
+    """Best-effort: a failure here must never undo or fail an accepted invite."""
+    try:
+        firebase_auth.update_user(firebase_uid, email_verified=True)
+    except Exception:
+        logger.warning('Could not mark Firebase email as verified for uid=%s', firebase_uid, exc_info=True)
 
 
 # POST — accept a pending invite after the user has created an account
@@ -540,6 +565,11 @@ class InviteAcceptApiView(generics.GenericAPIView):
         invite.accepted = True
         invite.accepted_at = timezone.now()
         invite.save(update_fields=['accepted', 'accepted_at'])
+
+        # The invite was mailed to this address and the email matched above, so ownership of it is
+        # proven: mark it verified in Firebase so the user is not asked to verify it again.
+        if request.user.firebase_uid:
+            transaction.on_commit(lambda uid=request.user.firebase_uid: _mark_firebase_email_verified(uid))
 
         logger.info(
             "User %s accepted invite to space %s (invite id=%s)",

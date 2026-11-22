@@ -1,4 +1,11 @@
+import logging
+import time
+
 from django.http import request
+from firebase_admin import auth as firebase_auth
+from firebase_admin.exceptions import FirebaseError
+from Models.spaces.api.api import SpaceRoleCleanupMixin
+from Models.spaces.models import PendingInvite, SpaceRole
 from rest_framework.permissions import IsAdminUser
 from Models.users.models import User, Tag, Language
 from Models.users.api.serializers import CheckEmailSerializer, CheckUsernameSerializer, UserSerializer, GetAuthenticatedUserSerializer, LanguageSerializer, TagSerializer, UsernameAndEmailSerializer, XPStatsSerializer, PublicUserXPStatsSerializer
@@ -13,6 +20,11 @@ from django.db import IntegrityError, transaction
 from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 
+logger = logging.getLogger(__name__)
+
+# How recent the Firebase sign-in must be to allow deleting a registered account.
+ACCOUNT_DELETE_MAX_AUTH_AGE_SECONDS = 5 * 60
+
 class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
 
@@ -20,9 +32,67 @@ class LoggedInUserApiView(generics.RetrieveUpdateDestroyAPIView):
         return self.request.user
 
     def delete(self, request, *args, **kwargs):
-        user = self.request.user
-        user.delete()
+        """
+        Permanently deletes the authenticated user's account.
+
+        - Registered (non-anonymous) users must have signed in recently (Firebase `auth_time`),
+          so a stolen/idle session cannot wipe an account. The frontend re-authenticates first.
+        - The user leaves every space as if they left it manually (admin promotion, creator
+          transfer, empty-space removal, their habits in those spaces are deleted).
+        - The Firebase user is deleted last, inside the DB transaction: if Firebase fails,
+          everything is rolled back so the user can simply retry.
+        """
+        user = request.user
+
+        if not user.is_anonymous_firebase_user and not self._signed_in_recently(request):
+            return Response(
+                {
+                    'detail': 'Please sign in again to confirm deleting your account.',
+                    'code': 'recent_login_required',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        firebase_uid = user.firebase_uid
+        email = user.email
+        user_id = user.id
+        try:
+            with transaction.atomic():
+                self._leave_all_spaces(user)
+                PendingInvite.objects.filter(email__iexact=email, accepted=False).delete()
+                user.delete()
+                if firebase_uid:
+                    self._delete_firebase_user(firebase_uid)
+        except FirebaseError:
+            logger.exception('Could not delete Firebase user for django user id=%s; rolled back', user_id)
+            return Response(
+                {'detail': 'We could not delete your account right now. Please try again later.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        logger.info('Deleted account of user id=%s', user_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @staticmethod
+    def _signed_in_recently(request) -> bool:
+        auth_time = (request.auth or {}).get('auth_time') if isinstance(request.auth, dict) else None
+        if not isinstance(auth_time, (int, float)):
+            return False
+        return time.time() - auth_time <= ACCOUNT_DELETE_MAX_AUTH_AGE_SECONDS
+
+    @staticmethod
+    def _leave_all_spaces(user):
+        cleanup = SpaceRoleCleanupMixin()
+        for space_role in list(SpaceRole.objects.filter(member=user).select_related('space')):
+            cleanup.cleanup_space_role(space_role, delete_habits=True)
+
+    @staticmethod
+    def _delete_firebase_user(firebase_uid):
+        try:
+            firebase_auth.delete_user(firebase_uid)
+        except firebase_auth.UserNotFoundError:
+            # Already gone from Firebase, which is the state we want.
+            logger.warning('Firebase user %s was already deleted', firebase_uid)
 
     def get_serializer_class(self):
         if self.request is not None and self.request.method == 'PUT':
